@@ -55,6 +55,14 @@ Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây l
 
 Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`docs/contracts.md`** mục 4.
 
+### 2.2b Thanh toán [Bắt buộc — đã chốt ở `docs/FEATURES.md` mục 3]
+
+| Thành phần | Công nghệ | Ghi chú |
+|---|---|---|
+| Cổng thanh toán | VNPay **sandbox** | Không dùng tiền thật; cần tự đăng ký tài khoản sandbox tại `sandbox.vnpayment.vn` để lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET` |
+| Ký request/verify callback | `crypto` (built-in Node.js, HMAC-SHA512) | Không cần SDK bên thứ 3, tự viết helper `backend/src/services/vnpay.ts` |
+| Luồng | Pay sau khi phiên sạc kết thúc (không pay lúc đặt chỗ) | Chi tiết luồng + endpoint: `docs/contracts.md` mục 4, `docs/FEATURES.md` mục 3 |
+
 ### 2.3 Bảo mật (môn Web an toàn) [Bắt buộc]
 
 | Mục tiêu | Công nghệ / kỹ thuật |
@@ -91,7 +99,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Dữ liệu chuỗi thời gian | Bảng PostgreSQL có chỉ mục theo thời gian | TimescaleDB là tùy chọn, chưa cần thiết với quy mô này |
 | Quản trị | pgAdmin hoặc DBeaver | Xem và truy vấn dữ liệu |
 
-Bảng gợi ý: `users`, `stations` (có `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`.
+Bảng đã migrate thật (Phase 1 + bổ sung thanh toán): `users`, `stations` (có `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`, `payments`.
 
 ### 2.5 Frontend [Bắt buộc]
 

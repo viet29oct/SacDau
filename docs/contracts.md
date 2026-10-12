@@ -147,6 +147,22 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 
 `endedAt`/`cost` có thể `null` khi phiên đang chạy.
 
+### Payment
+
+```json
+{
+  "id": 1,
+  "chargingSessionId": 7,
+  "amount": 56000,
+  "status": "success",
+  "vnpayTxnRef": "SACDAU17918230000",
+  "vnpayTransactionNo": "14231456",
+  "paidAt": "2026-10-13T09:00:00Z"
+}
+```
+
+`status` ∈ `pending` \| `success` \| `failed`. `vnpayTransactionNo`/`paidAt` chỉ có khi `status = success`.
+
 ---
 
 ## 4. Danh sách endpoint (nhóm theo người phụ trách — khớp `QUY_TAC_LAM_VIEC_NHOM.md` mục 2)
@@ -182,6 +198,26 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 |---|---|---|
 | GET | `/sessions/:id` | `ChargingSession` |
 | GET | `/stations/:id/sessions` | `ChargingSession[]` |
+
+### Người 2 — `/payments` (VNPay sandbox)
+
+Thanh toán xảy ra **sau khi phiên sạc kết thúc** (`charging_sessions.cost` đã có giá trị cuối), không thanh toán lúc đặt chỗ.
+
+| Method | Path | Body | `data` trả về |
+|---|---|---|---|
+| POST | `/payments` | `{ chargingSessionId }` | `{ paymentUrl }` — link redirect sang VNPay sandbox |
+| GET | `/payments/:id` | — | `Payment` |
+
+**2 route đặc biệt — KHÔNG theo envelope `success/data/error` chuẩn**, vì định dạng do VNPay quy định, không phải do mình tự chọn:
+
+- `GET /payments/vnpay-return` — VNPay redirect **trình duyệt của người dùng** về đây kèm query `vnp_*` + `vnp_SecureHash`. Backend verify hash (HMAC-SHA512 bằng `VNPAY_HASH_SECRET`), update `payments.status`, rồi **redirect tiếp** về frontend (`/payment-result?status=success|failed`) — không trả JSON.
+- `POST /payments/vnpay-ipn` — VNPay **server** gọi ngầm (không phải người dùng) để xác nhận giao dịch thật. Backend verify hash tương tự, rồi **phải trả đúng format VNPay yêu cầu**: `{ "RspCode": "00", "Message": "Confirm Success" }` (hoặc code lỗi tương ứng) — sai format này VNPay sẽ coi là thất bại và gọi lại nhiều lần.
+
+Thêm `error.code`: `PAYMENT_NOT_FOUND` (404), `INVALID_SIGNATURE` (400 — hash VNPay gửi về không khớp, nghi giả mạo), `PAYMENT_ALREADY_PROCESSED` (409 — IPN gọi lại cho giao dịch đã xử lý xong).
+
+**Biến môi trường cần thêm** (`backend/.env.example`): `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_URL` (endpoint sandbox), `VNPAY_RETURN_URL` (URL backend xử lý return, ví dụ `http://localhost:3000/payments/vnpay-return`).
+
+> ⚠️ `VNPAY_TMN_CODE` và `VNPAY_HASH_SECRET` phải tự đăng ký tài khoản sandbox tại `sandbox.vnpayment.vn` (cần người trong nhóm tự làm, không ai tạo giùm được) — khi có thì điền vào `.env` thật, **không commit lên git**.
 
 ---
 

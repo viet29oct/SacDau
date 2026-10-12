@@ -2,7 +2,7 @@
 
 File này là danh sách việc sống — **tick checkbox khi xong, thêm dòng vào "Nhật ký cập nhật" ở cuối mỗi khi có thay đổi lớn**. Không xoá mục đã làm, chỉ tick `[x]` để sau này cả nhóm biết đã qua giai đoạn nào.
 
-Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật chơi chung).
+Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật chơi chung), `FEATURES.md` (phạm vi tính năng đã chốt), `contracts.md` (JSON contract).
 
 ---
 
@@ -59,6 +59,9 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 
 - [ ] `/bookings` — đặt chỗ sạc, kiểm tra trùng giờ/trùng port.
 - [ ] `/reports` — báo cáo tổng hợp (doanh thu, số phiên sạc...).
+- [ ] **Đăng ký tài khoản sandbox VNPay** tại `sandbox.vnpayment.vn`, lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET`, điền vào `backend/.env` (không commit).
+- [ ] Viết `backend/src/services/vnpay.ts` — helper build URL thanh toán (ký HMAC-SHA512) + verify signature khi nhận callback.
+- [ ] Route `/payments` (POST tạo thanh toán, GET xem trạng thái), `/payments/vnpay-return`, `/payments/vnpay-ipn` — đúng theo `docs/contracts.md` mục 4.
 - [ ] Review PR của `/stations` (Người 3) và `/telemetry` (Người 1) khi họ mở PR — đảm bảo không phá contract đã chốt ở Phase 2.
 
 ## Phase 6 — Kiểm thử bảo mật cuối kỳ (phục vụ báo cáo môn Web an toàn)
@@ -86,3 +89,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 - 2026-10-12 — Bắt đầu Phase 0: clone repo `SacDau` về máy, dựng cấu trúc thư mục, `.gitignore`, `.nvmrc` (24.19.0), `requirements.txt` rỗng, chuyển 3 file docs vào `docs/`. Còn thiếu: add collaborator + bật branch protection trên GitHub (web, chưa tự làm được), và báo nhóm quy tắc tạo nhánh `feature/...`.
 - 2026-10-12 — Hoàn thành Phase 1: `docker-compose.yml` (Postgres+PostGIS cổng `5433` do máy có Postgres native sẵn, Mosquitto cổng `1883`/`9001`), backend chuyển sang **TypeScript**, migration bằng **node-pg-migrate** (schema 7 bảng đã chạy thành công), `/health` test connect DB OK. Còn thiếu: gửi tin thông báo khoá file config/DB lên group chat (mẫu câu có sẵn ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3).
 - 2026-10-12 — Soạn bản nháp `docs/contracts.md` (MQTT 1 topic, response envelope, object chuẩn, endpoint đầy đủ theo người phụ trách). Bạn sẽ đưa nhóm đọc và yêu cầu tuân theo — còn thiếu bước xác nhận cả 3 người đồng ý trong chat.
+- 2026-10-12 — Chốt phạm vi tính năng cuối cùng (`docs/FEATURES.md`): cắt routing thật/review/chatbot/ví giả lập, **giữ lại thanh toán VNPay sandbox** gắn vào phiên sạc đã kết thúc. Đã thêm bảng `payments` (migration mới, chạy thành công), cập nhật `contracts.md` (object `Payment`, endpoint `/payments/*`, 2 route ngoại lệ không theo envelope chuẩn vì VNPay quy định format riêng) và `.env.example` (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`...). Còn thiếu: đăng ký tài khoản sandbox VNPay để lấy TMN code/hash secret thật (xem Phase 5).
