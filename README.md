@@ -2,11 +2,15 @@
 
 Đồ án dùng chung 5 môn: IoT, Ngôn ngữ kịch bản, Web an toàn, GIS, Phân tích dữ liệu.
 
-**Đọc trước khi code:**
+**Mở lại dự án sau khi nghỉ?** Đọc [`docs/NEXT_SESSION.md`](docs/NEXT_SESSION.md) trước — tóm tắt trạng thái hiện tại, không cần đọc lại từ đầu.
+
+**Đọc trước khi code (lần đầu):**
 
 1. [`docs/TECH_STACK.md`](docs/TECH_STACK.md) — công nghệ dùng cho từng tầng.
 2. [`docs/QUY_TAC_LAM_VIEC_NHOM.md`](docs/QUY_TAC_LAM_VIEC_NHOM.md) — luật chơi chung của nhóm (version, phân module, file cấu hình, JSON contract, mocking, linter, `.env`).
-3. [`docs/ROADMAP.md`](docs/ROADMAP.md) — checklist công việc, cập nhật liên tục theo tiến độ.
+3. [`docs/FEATURES.md`](docs/FEATURES.md) — phạm vi tính năng đã chốt.
+4. [`docs/contracts.md`](docs/contracts.md) — JSON contract (MQTT, REST API, VNPay).
+5. [`docs/ROADMAP.md`](docs/ROADMAP.md) — checklist công việc, cập nhật liên tục theo tiến độ.
 
 ## Cấu trúc thư mục
 
