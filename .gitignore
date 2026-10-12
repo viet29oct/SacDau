@@ -1,0 +1,36 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Build output
+dist/
+build/
+frontend/dist/
+
+# Docker
+*.pid
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Data tạm / lớn
+analytics/data/*.csv
+!analytics/data/.gitkeep
+*.pbix.tmp
