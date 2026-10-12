@@ -42,11 +42,12 @@ Dữ liệu thiết bị gửi (gợi ý): `stationId`, `portId`, `status` (idle
 
 | Thành phần | Công nghệ | Mục đích |
 |---|---|---|
-| Runtime | Node.js (bản LTS) | Môn Ngôn ngữ kịch bản |
+| Runtime | Node.js (bản LTS, đã chốt `24.x`) | Môn Ngôn ngữ kịch bản |
+| Ngôn ngữ | **TypeScript** (chốt ở Phase 1, thay cho JS thuần) | Dev chạy bằng `tsx watch`, build bằng `tsc` |
 | Framework | Express | Dựng REST API |
 | MQTT client | `mqtt` | Backend đăng ký nhận dữ liệu từ broker |
 | Truy cập CSDL | `pg` (node-postgres) | Dùng truy vấn tham số hóa, tránh SQL Injection |
-| Migration | `node-pg-migrate` hoặc file SQL thuần | Quản lý lược đồ CSDL |
+| Migration | **`node-pg-migrate`** (đã chốt, không dùng file SQL thuần tay) | Quản lý lược đồ CSDL theo version, lệnh `npm run migrate:up`/`migrate:down` |
 | Biến môi trường | `dotenv` | Không để mật khẩu trong mã nguồn |
 | Tài liệu API | `swagger-ui-express` + OpenAPI | Tài liệu endpoint, dùng cho báo cáo |
 | Kiểm thử | `jest` + `supertest` | Kiểm thử endpoint [Nên có] |

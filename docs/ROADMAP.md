@@ -20,14 +20,15 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 
 ## Phase 1 — Hạ tầng & khung server (vùng cấm — chỉ bạn làm)
 
-- [ ] Viết `docker-compose.yml`: service PostgreSQL+PostGIS (image ghi version cụ thể), service Mosquitto (version cụ thể), map port, volume cho data.
-- [ ] Test `docker compose up` chạy được, connect vào Postgres bằng `psql`/DBeaver OK.
-- [ ] Viết migration khởi tạo schema (`db/migrations/001_init.sql`): bảng `users`, `stations` (có cột `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs` — theo gợi ý ở `TECH_STACK.md` mục 2.4.
-- [ ] Viết `backend/src/db/index.js` (pool connection `pg`, đọc `DATABASE_URL` từ `.env`).
-- [ ] Viết `backend/src/app.js` + `server.js` (khung Express, listen port từ `.env`).
-- [ ] Viết `.env.example` đầy đủ biến (PORT, DATABASE_URL, JWT_SECRET, MQTT_BROKER_URL...).
-- [ ] Test server chạy `GET /health` trả 200 + kết nối DB thành công.
-- [ ] **Thông báo nhóm** theo mẫu câu ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3 — khoá file config/DB lại, mọi người chỉ import.
+- [x] Viết `docker-compose.yml`: service PostgreSQL+PostGIS (`postgis/postgis:16-3.4`), service Mosquitto (`eclipse-mosquitto:2.0.18`), volume `pgdata`.
+  - ⚠️ Máy khởi tạo dự án có Postgres native sẵn chiếm cổng `5432` → đã đổi cổng host Postgres sang **`5433`** (`DATABASE_URL` trong `.env.example` đã trỏ đúng). Ai máy sạch vẫn connect bình thường qua `5433`.
+- [x] Test `docker compose up` chạy được, connect Postgres OK (test qua `/health`, xem bên dưới).
+- [x] Viết migration khởi tạo schema bằng **node-pg-migrate** (`backend/migrations/1791819717249_init.js`): bảng `users`, `stations` (có cột `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs` — theo gợi ý ở `TECH_STACK.md` mục 2.4. Đã chạy `npm run migrate:up` thành công.
+- [x] Viết `backend/src/db/index.ts` (pool connection `pg`, đọc `DATABASE_URL` từ `.env`).
+- [x] Viết `backend/src/app.ts` + `server.ts` bằng **TypeScript** (khung Express + helmet + cors, listen port từ `.env`).
+- [x] Viết `.env.example` ở root (Postgres) và `backend/.env.example` (PORT, DATABASE_URL, JWT_SECRET, MQTT_BROKER_URL).
+- [x] Test server chạy `GET /health` trả 200 + kết nối DB thành công — đã verify: `{"success":true,"data":{"status":"ok","db":"connected"}}`.
+- [ ] **Thông báo nhóm** theo mẫu câu ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3 — khoá file config/DB lại, mọi người chỉ import. (Bạn tự gửi vào group chat.)
 
 ## Phase 2 — Chốt contract chung (làm cùng cả nhóm, không làm riêng)
 
@@ -83,3 +84,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 
 - 2026-10-12 — Tạo roadmap, chưa bắt đầu Phase 0.
 - 2026-10-12 — Bắt đầu Phase 0: clone repo `SacDau` về máy, dựng cấu trúc thư mục, `.gitignore`, `.nvmrc` (24.19.0), `requirements.txt` rỗng, chuyển 3 file docs vào `docs/`. Còn thiếu: add collaborator + bật branch protection trên GitHub (web, chưa tự làm được), và báo nhóm quy tắc tạo nhánh `feature/...`.
+- 2026-10-12 — Hoàn thành Phase 1: `docker-compose.yml` (Postgres+PostGIS cổng `5433` do máy có Postgres native sẵn, Mosquitto cổng `1883`/`9001`), backend chuyển sang **TypeScript**, migration bằng **node-pg-migrate** (schema 7 bảng đã chạy thành công), `/health` test connect DB OK. Còn thiếu: gửi tin thông báo khoá file config/DB lên group chat (mẫu câu có sẵn ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3).

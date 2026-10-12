@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: sacdau_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sacdau}
+      POSTGRES_USER: ${POSTGRES_USER:-sacdau_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sacdau_dev_pw}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.18
+    container_name: sacdau_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+volumes:
+  pgdata:
