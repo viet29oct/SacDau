@@ -32,11 +32,11 @@ Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu m�
 | Mô phỏng | Wokwi | Không cần phần cứng thật; có thể thêm LED (trạng thái cổng), DHT22 (nhiệt độ) |
 | Ngôn ngữ | C/C++ (Arduino framework) | Dùng Arduino IDE hoặc PlatformIO |
 | Thư viện | `WiFi`, `PubSubClient`, `ArduinoJson`, `DHT sensor library` | Kết nối WiFi, publish MQTT, đóng gói JSON |
-| Giao thức | MQTT | Thiết kế topic dạng `stations/{stationId}/status`, `stations/{stationId}/session` |
+| Giao thức | MQTT | **Đã chốt 1 topic duy nhất**: `stations/{stationId}/status` — xem payload chính xác ở `docs/contracts.md` mục 1 |
 | Broker | Eclipse Mosquitto (chạy bằng Docker) | Có thể dùng broker công cộng (HiveMQ) khi demo Wokwi |
 | Công cụ kiểm tra | MQTT Explorer hoặc MQTTX | Xem message trực tiếp, hỗ trợ viết báo cáo |
 
-Dữ liệu thiết bị gửi (gợi ý): `stationId`, `portId`, `status` (idle/charging/fault), `powerKw`, `energyKwh`, `temperature`, `timestamp`.
+Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây là bản chốt cuối, không lặp lại ở đây để tránh 2 nơi ghi khác nhau).
 
 ### 2.2 Backend [Bắt buộc]
 
@@ -53,7 +53,7 @@ Dữ liệu thiết bị gửi (gợi ý): `stationId`, `portId`, `status` (idle
 | Kiểm thử | `jest` + `supertest` | Kiểm thử endpoint [Nên có] |
 | Thời gian thực | `ws` hoặc `socket.io` | Đẩy trạng thái trạm lên giao diện [Nên có] |
 
-Nhóm endpoint gợi ý: `/auth`, `/users`, `/stations`, `/bookings`, `/sessions`, `/reports`.
+Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`docs/contracts.md`** mục 4.
 
 ### 2.3 Bảo mật (môn Web an toàn) [Bắt buộc]
 

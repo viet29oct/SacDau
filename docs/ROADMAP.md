@@ -32,8 +32,8 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 
 ## Phase 2 — Chốt contract chung (làm cùng cả nhóm, không làm riêng)
 
-- [ ] Tạo `docs/contracts.md`, soạn trước bản nháp JSON (payload MQTT, response API chuẩn, object `station`) dựa theo mẫu ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 5.
-- [ ] Họp nhóm (hoặc chat) để Người 1 (IoT) và Người 3 (GIS/Analytics) góp ý field còn thiếu.
+- [x] Tạo `docs/contracts.md`: MQTT payload (1 topic duy nhất `stations/{stationId}/status`), response envelope chuẩn, object `User`/`Station`/`Port`/`Booking`/`ChargingSession`, danh sách đầy đủ endpoint theo đúng người phụ trách ở mục 2 của `QUY_TAC_LAM_VIEC_NHOM.md`. Khớp 1:1 với schema đã migrate ở Phase 1.
+- [ ] Gửi `docs/contracts.md` cho Người 1 (IoT) và Người 3 (GIS/Analytics) đọc, góp ý field còn thiếu trước khi code route/giao diện.
 - [ ] Chốt bản cuối, cả 3 người xác nhận đồng ý trong group chat (lưu lại làm "bằng chứng" nếu sau có tranh cãi field).
 - [ ] Setup Swagger/OpenAPI (`swagger-ui-express`) khung rỗng, sẽ điền dần khi có route.
 
@@ -85,3 +85,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 - 2026-10-12 — Tạo roadmap, chưa bắt đầu Phase 0.
 - 2026-10-12 — Bắt đầu Phase 0: clone repo `SacDau` về máy, dựng cấu trúc thư mục, `.gitignore`, `.nvmrc` (24.19.0), `requirements.txt` rỗng, chuyển 3 file docs vào `docs/`. Còn thiếu: add collaborator + bật branch protection trên GitHub (web, chưa tự làm được), và báo nhóm quy tắc tạo nhánh `feature/...`.
 - 2026-10-12 — Hoàn thành Phase 1: `docker-compose.yml` (Postgres+PostGIS cổng `5433` do máy có Postgres native sẵn, Mosquitto cổng `1883`/`9001`), backend chuyển sang **TypeScript**, migration bằng **node-pg-migrate** (schema 7 bảng đã chạy thành công), `/health` test connect DB OK. Còn thiếu: gửi tin thông báo khoá file config/DB lên group chat (mẫu câu có sẵn ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3).
+- 2026-10-12 — Soạn bản nháp `docs/contracts.md` (MQTT 1 topic, response envelope, object chuẩn, endpoint đầy đủ theo người phụ trách). Bạn sẽ đưa nhóm đọc và yêu cầu tuân theo — còn thiếu bước xác nhận cả 3 người đồng ý trong chat.
