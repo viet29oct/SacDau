@@ -39,12 +39,12 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 
 ## Phase 3 — Auth & RBAC (lõi bảo mật)
 
-- [ ] Route `/auth/register`, `/auth/login` — hash password bằng `bcrypt`.
-- [ ] JWT: access token ngắn hạn + refresh token (`jsonwebtoken`).
-- [ ] Middleware `authMiddleware` (verify JWT) + `rbacMiddleware` (check role: tài xế / chủ trạm / quản trị viên).
-- [ ] Kiểm tra quyền sở hữu tài nguyên (chống IDOR) — ví dụ user A không sửa booking của user B.
-- [ ] Route `/users` (CRUD cơ bản, chỉ admin thao tác người khác).
-- [ ] Viết test `jest` + `supertest` cho auth (ít nhất: login đúng/sai, token hết hạn, route cần token mà không có token).
+- [x] Route `/auth/register`, `/auth/login` — hash password bằng `bcrypt`.
+- [x] JWT: access token ngắn hạn + refresh token (`jsonwebtoken`).
+- [x] Middleware `authMiddleware` (verify JWT) + `rbacMiddleware` (check role: tài xế / chủ trạm / quản trị viên).
+- [x] Kiểm tra quyền sở hữu tài nguyên (chống IDOR) — ví dụ user A không sửa booking của user B.
+- [x] Route `/users` (CRUD cơ bản, chỉ admin thao tác người khác).
+- [x] Viết test `jest` + `supertest` cho auth (ít nhất: login đúng/sai, token hết hạn, route cần token mà không có token).
 
 ## Phase 4 — Bảo mật hạ tầng (song song Phase 3)
 
@@ -90,3 +90,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 - 2026-10-12 — Hoàn thành Phase 1: `docker-compose.yml` (Postgres+PostGIS cổng `5433` do máy có Postgres native sẵn, Mosquitto cổng `1883`/`9001`), backend chuyển sang **TypeScript**, migration bằng **node-pg-migrate** (schema 7 bảng đã chạy thành công), `/health` test connect DB OK. Còn thiếu: gửi tin thông báo khoá file config/DB lên group chat (mẫu câu có sẵn ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3).
 - 2026-10-12 — Soạn bản nháp `docs/contracts.md` (MQTT 1 topic, response envelope, object chuẩn, endpoint đầy đủ theo người phụ trách). Bạn sẽ đưa nhóm đọc và yêu cầu tuân theo — còn thiếu bước xác nhận cả 3 người đồng ý trong chat.
 - 2026-10-12 — Chốt phạm vi tính năng cuối cùng (`docs/FEATURES.md`): cắt routing thật/review/chatbot/ví giả lập, **giữ lại thanh toán VNPay sandbox** gắn vào phiên sạc đã kết thúc. Đã thêm bảng `payments` (migration mới, chạy thành công), cập nhật `contracts.md` (object `Payment`, endpoint `/payments/*`, 2 route ngoại lệ không theo envelope chuẩn vì VNPay quy định format riêng) và `.env.example` (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`...). Còn thiếu: đăng ký tài khoản sandbox VNPay để lấy TMN code/hash secret thật (xem Phase 5).
+- 2026-10-13 — Xong Phase 3 (nhánh `feature/backend-auth`): register/login/refresh (JWT access 15m + refresh 7d, 2 secret riêng), `authMiddleware` + `rbacMiddleware` + `assertOwnerOrAdmin` (chống IDOR), `/users/me`, `/users`, `PATCH /users/:id`, error handler chung; 29 test jest+supertest chạy trên DB riêng `sacdau_test`. Dùng `bcryptjs` thay `bcrypt` (thuần JS, không cần build native trên Windows). Thêm error code `EMAIL_ALREADY_EXISTS`.
