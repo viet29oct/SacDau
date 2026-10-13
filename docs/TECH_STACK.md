@@ -67,7 +67,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 
 | Mục tiêu | Công nghệ / kỹ thuật |
 |---|---|
-| Mã hóa mật khẩu | `bcrypt` hoặc `argon2` |
+| Mã hóa mật khẩu | `bcryptjs` (cùng thuật toán bcrypt, thuần JS — không cần build native trên Windows) |
 | Xác thực | JWT (`jsonwebtoken`), access token ngắn hạn + refresh token |
 | Phân quyền | RBAC 3 vai trò: tài xế, chủ trạm, quản trị viên; kiểm tra quyền sở hữu tài nguyên để chống IDOR |
 | Chống SQL Injection | Truy vấn tham số hóa (`$1, $2`), không nối chuỗi |

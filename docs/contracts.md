@@ -78,6 +78,7 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 | `STATION_NOT_FOUND` | 404 | Riêng cho `/stations/:id` |
 | `PORT_UNAVAILABLE` | 409 | Đặt chỗ vào port đang `charging`/`fault` |
 | `BOOKING_CONFLICT` | 409 | Trùng khung giờ đặt chỗ |
+| `EMAIL_ALREADY_EXISTS` | 409 | Đăng ký hoặc đổi email trùng với tài khoản khác *(thêm 2026-10-13, Phase 3)* |
 | `INTERNAL_ERROR` | 500 | Lỗi server không xác định |
 
 ---
@@ -171,9 +172,12 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 
 | Method | Path | Body | `data` trả về |
 |---|---|---|---|
-| POST | `/auth/register` | `{ name, email, password, role }` | `{ user: User, accessToken, refreshToken }` |
+| POST | `/auth/register` | `{ name, email, password, role }` — `role` chỉ nhận `driver`/`owner`; admin tạo bằng `npm run create-admin` | `{ user: User, accessToken, refreshToken }` |
 | POST | `/auth/login` | `{ email, password }` | `{ user: User, accessToken, refreshToken }` |
 | POST | `/auth/refresh` | `{ refreshToken }` | `{ accessToken }` |
+
+Access token hết hạn sau 15 phút, refresh token sau 7 ngày (ký bằng 2 secret khác nhau, không dùng lẫn được). Access token hết hạn → gọi `/auth/refresh`; refresh cũng hết hạn → bắt đăng nhập lại.
+
 | GET | `/users/me` | — | `User` |
 | GET | `/users` *(admin)* | — | `User[]` |
 | PATCH | `/users/:id` *(chính chủ hoặc admin)* | `{ name?, email? }` | `User` |
