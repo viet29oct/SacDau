@@ -73,12 +73,12 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Chống SQL Injection | Truy vấn tham số hóa (`$1, $2`), không nối chuỗi |
 | Chống XSS | Escape đầu ra, Content-Security-Policy (qua `helmet`) |
 | Chống CSRF | Cookie `SameSite`, CSRF token nếu dùng cookie |
-| Kiểm tra đầu vào | `zod` hoặc `joi` hoặc `express-validator` |
+| Kiểm tra đầu vào | **`zod`** (chốt ở Phase 4) — validate toàn bộ route nhận body qua `src/validation/` |
 | Header bảo mật | `helmet` |
-| Giới hạn tần suất | `express-rate-limit` (chống brute force đăng nhập) |
-| CORS | `cors` cấu hình whitelist |
+| Giới hạn tần suất | `express-rate-limit` (chống brute force `/auth/login`, chốt ở Phase 4) |
+| CORS | `cors` cấu hình whitelist qua `FRONTEND_URL` |
 | HTTPS | Chứng chỉ tự ký khi chạy local (mkcert) [Nên có] |
-| Ghi log | `winston` hoặc `pino`, log đăng nhập và thao tác nhạy cảm |
+| Ghi log | **`pino`** (chốt ở Phase 4) — `pino-http` log mọi request, `src/services/audit.ts` ghi riêng đăng nhập + thao tác nhạy cảm vào bảng `audit_logs` |
 
 **Công cụ kiểm thử bảo mật** (phục vụ phần báo cáo):
 

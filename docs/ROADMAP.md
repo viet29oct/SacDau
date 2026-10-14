@@ -49,11 +49,11 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 ## Phase 4 — Bảo mật hạ tầng (song song Phase 3)
 
 - [x] Cài `helmet` (security headers), `cors` (whitelist origin frontend) — `cors({ origin: process.env.FRONTEND_URL })`, mặc định `http://localhost:5173`.
-- [ ] Cài `express-rate-limit` cho route login (chống brute force).
-- [ ] Input validation bằng `zod`/`joi`/`express-validator` cho toàn bộ route nhận body.
-- [ ] Đảm bảo toàn bộ query DB dùng tham số hoá (`$1, $2`), review lại code của Người 1/3 nếu họ viết query trong module của mình.
-- [ ] Logging bằng `winston`/`pino`: log đăng nhập, log thao tác nhạy cảm (đổi quyền, xoá dữ liệu).
-- [ ] `npm audit` định kỳ, ghi lại kết quả vào `security/`.
+- [x] Cài `express-rate-limit` cho route login (chống brute force) — `src/middleware/rateLimiter.ts`, 10 lần/15 phút/IP, trả lỗi `TOO_MANY_REQUESTS` (429, đã thêm vào `contracts.md`).
+- [x] Input validation bằng `zod` cho toàn bộ route nhận body (`/auth/register`, `/auth/login`, `/auth/refresh`, `PATCH /users/:id`) — `src/validation/schemas.ts` + `validate.ts`, bọc lại đúng logic validate tay cũ (không đổi hành vi), tự strip field lạ (chống mass assignment).
+- [x] Đảm bảo toàn bộ query DB dùng tham số hoá (`$1, $2`) — đã rà lại toàn bộ code hiện có của Người 2 (`routes/`, `services/`), không có nối chuỗi SQL. Phần "review code Người 1/3" chờ họ mở PR `/stations`/`/telemetry` (xem Phase 5).
+- [x] Logging bằng `pino`: `pino-http` log mọi request (`app.ts`, im lặng khi `NODE_ENV=test`), `src/services/audit.ts` ghi riêng đăng nhập (`auth.login`, cả thành công/thất bại) + sửa thông tin tài khoản (`user.update`) vào bảng `audit_logs`.
+- [x] `npm audit` định kỳ, ghi lại kết quả vào `security/` — `security/npm-audit/README.md` + báo cáo `2026-10-14` (frontend sạch, backend có 22 cảnh báo dev-only từ `node-pg-migrate`/`jest`, chưa fix vì breaking change, cần báo nhóm trước).
 
 ## Phase 5 — Route nghiệp vụ còn lại (thuộc phạm vi Người 2)
 
@@ -97,3 +97,9 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
   - **Đổi cấu trúc route quan trọng**: `/` không còn là trang dashboard sau đăng nhập — tách thành `/driver-dashboard` (role `driver`) và `/station-dashboard` (role `owner`), map qua `src/utils/roleDashboard.js`. Sau login/register, điều hướng theo role (admin → `/reports`, tạm thời vì chưa có trang admin riêng — xem phần "Việc còn treo"). Thêm 3 trang placeholder công khai `/gioi-thieu`, `/tin-tuc`, `/ho-tro`.
   - Thêm `frontend/public/favicon.svg` (khắc phục 404 favicon thấy trong console log).
   - Test: build `vite build` qua, dev server `curl` từng file nguồn (200 OK, không lỗi transform), **chưa xem bằng mắt** (Chrome extension của Claude vẫn chưa kết nối được) — bạn cần tự mở `npm run dev` và kiểm tra lại hiệu ứng động, responsive mobile, đặc biệt là gradient theo chuột và glassmorphism ở Hero.
+- 2026-10-14 — Hoàn thành phần còn lại của **Phase 4 — Bảo mật hạ tầng**:
+  - `express-rate-limit`: `src/middleware/rateLimiter.ts`, áp cho `POST /auth/login` (10 lần/15 phút/IP), trả `429 TOO_MANY_REQUESTS` (đã thêm vào `contracts.md` + `TECH_STACK.md`).
+  - `zod` (`4.6.7`, version cứng): `src/validation/schemas.ts` bọc lại `parseName`/`parseEmail`/`parsePassword` (service cũ) thành field zod qua `wrapParser` — không viết trùng logic, giữ nguyên hành vi (trim/lowercase email, giới hạn 72 byte cho bcrypt). `src/validation/validate.ts` export `validateBody` (middleware, dùng cho register/login/refresh) và `parseBody` (gọi tay, dùng cho `PATCH /users/:id` để giữ đúng thứ tự: kiểm tra quyền sở hữu *trước* khi validate body). zod tự strip field lạ khỏi body (object không `.strict()`) → thêm 1 lớp chống mass assignment.
+  - Logging: `pino` (`10.4.0`) + `pino-http` (`11.0.0`, log mọi request qua `app.ts`, im lặng khi `NODE_ENV=test` để không rối output `npm test`) + `pino-pretty` (`13.2.0`, format màu lúc dev, tắt ở production). `src/services/audit.ts` ghi riêng `auth.register`, `auth.login` (cả thành công/thất bại), `user.update` vào bảng `audit_logs` có sẵn — lỗi ghi audit không làm fail request chính.
+  - `npm audit`: frontend 0 lỗ hổng; backend 22 cảnh báo (20 moderate, 2 high) nhưng toàn bộ ở dev dependency (`node-pg-migrate`→`glob`, `jest`/`ts-jest`→`sprintf-js`/`js-yaml`), không lộ qua API lúc chạy, fix đòi breaking change nên **chưa fix**, chờ báo nhóm. Chi tiết: `security/npm-audit/README.md`.
+  - Test: backend `tsc` build qua, `npm test` 29/29 pass (không đổi hành vi nào bị test cũ bắt được), tự `curl` xác minh rate limit (401 × 10 rồi 429 ở lần 11) và audit log ghi đúng vào DB + console (pino-pretty).

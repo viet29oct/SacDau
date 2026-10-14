@@ -1,15 +1,11 @@
 import { Router } from 'express';
 import { query } from '../db';
 import { assertOwnerOrAdmin, authMiddleware, rbacMiddleware } from '../middleware/auth';
-import {
-  emailTakenError,
-  findUserById,
-  isUniqueViolation,
-  parseEmail,
-  parseName,
-  toUser,
-} from '../services/users';
+import { emailTakenError, findUserById, isUniqueViolation, toUser } from '../services/users';
+import { logAudit } from '../services/audit';
 import { AppError, asyncHandler, ok } from '../utils/http';
+import { updateUserSchema } from '../validation/schemas';
+import { parseBody } from '../validation/validate';
 
 const router = Router();
 
@@ -41,16 +37,11 @@ router.patch(
     if (!Number.isInteger(id) || id <= 0) {
       throw new AppError(400, 'VALIDATION_ERROR', 'id không hợp lệ');
     }
-    // Check quyền trước khi tra DB -> user thường không dò được id nào tồn tại
+    // Check quyền trước khi tra DB/validate body -> user thường không dò được id nào tồn tại
     assertOwnerOrAdmin(req.user!, id);
 
-    // Chỉ nhận name/email; các field khác (role, passwordHash...) bị bỏ qua -> chống mass assignment
-    const body = req.body ?? {};
-    const name = body.name !== undefined ? parseName(body.name) : undefined;
-    const email = body.email !== undefined ? parseEmail(body.email) : undefined;
-    if (name === undefined && email === undefined) {
-      throw new AppError(400, 'VALIDATION_ERROR', 'Cần ít nhất name hoặc email');
-    }
+    // zod strip field lạ (vd. role) khỏi req.body -> chống mass assignment
+    const { name, email } = parseBody(updateUserSchema, req.body);
 
     try {
       const { rows } = await query(
@@ -59,6 +50,7 @@ router.patch(
         [name ?? null, email ?? null, id],
       );
       if (!rows[0]) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy người dùng');
+      await logAudit(req.user!.id, 'user.update', { targetId: id, name, email });
       ok(res, toUser(rows[0]));
     } catch (err) {
       if (isUniqueViolation(err)) throw emailTakenError();

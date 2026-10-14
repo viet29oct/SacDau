@@ -79,6 +79,7 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 | `PORT_UNAVAILABLE` | 409 | Đặt chỗ vào port đang `charging`/`fault` |
 | `BOOKING_CONFLICT` | 409 | Trùng khung giờ đặt chỗ |
 | `EMAIL_ALREADY_EXISTS` | 409 | Đăng ký hoặc đổi email trùng với tài khoản khác *(thêm 2026-10-13, Phase 3)* |
+| `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (hiện áp cho `/auth/login`, chống brute force) *(thêm 2026-10-14, Phase 4)* |
 | `INTERNAL_ERROR` | 500 | Lỗi server không xác định |
 
 ---
