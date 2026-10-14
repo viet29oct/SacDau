@@ -37,3 +37,6 @@ analytics/data/*.csv
 
 # Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit
 .claude/
+
+# Ghi chu phien lam viec ca nhan - khong chia se len repo chung
+docs/NEXT_SESSION.md
