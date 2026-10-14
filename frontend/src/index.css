@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #113259;
+  --color-navy-dark: #0c2544;
+  --color-forest: #2a623d;
+  --color-forest-light: #357a4c;
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-landing-float {
+  animation: landing-float 5s ease-in-out infinite;
+}
+

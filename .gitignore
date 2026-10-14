@@ -34,3 +34,6 @@ Thumbs.db
 analytics/data/*.csv
 !analytics/data/.gitkeep
 *.pbix.tmp
+
+# Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit
+.claude/
