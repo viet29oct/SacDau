@@ -1,6 +1,6 @@
 # Đọc file này trước — trạng thái dự án SacDau
 
-Cập nhật lần cuối: **2026-10-13** (cuối phiên 2: xong Phase 3, chuẩn bị dựng khung frontend). File này tóm tắt các phiên làm việc gần nhất, để mở lại dự án mà không cần đọc lại từ đầu. Chi tiết đầy đủ nằm ở các file khác trong `docs/`, file này chỉ là bản tóm tắt + điểm vào.
+Cập nhật lần cuối: **2026-10-13** (cuối phiên 3: xong khung frontend). File này tóm tắt các phiên làm việc gần nhất, để mở lại dự án mà không cần đọc lại từ đầu. Chi tiết đầy đủ nằm ở các file khác trong `docs/`, file này chỉ là bản tóm tắt + điểm vào.
 
 ---
 
@@ -15,6 +15,15 @@ Cập nhật lần cuối: **2026-10-13** (cuối phiên 2: xong Phase 3, chuẩ
   - Route mới: bọc handler async bằng `asyncHandler` + `throw new AppError(status, code, message)` (`src/utils/http.ts`); `middleware/errorHandler.ts` tự trả đúng envelope.
   - Test: `npm test` trong `backend/` — 29 test jest+supertest, chạy trên DB riêng `sacdau_test`.
   - Thêm error code `EMAIL_ALREADY_EXISTS` (409) vào `contracts.md`.
+- **Khung frontend** (nhánh `Viet`, chưa merge):
+  - `frontend/`: React `19.3.0` + Vite `8.3.4` (JS) + Tailwind v4 + `react-router-dom` `7.18.4`, version cứng trong `package.json`.
+  - API client (`src/api/client.js`): đọc envelope chuẩn, tự `Authorization: Bearer`, tự `/auth/refresh` khi access token hết hạn rồi retry 1 lần.
+  - Auth state: React Context + hook `useAuth` (`src/context/AuthContext.jsx`), token lưu `localStorage`.
+  - `ProtectedRoute` theo role; trang Login/Register nối backend thật; trang placeholder Stations/Bookings/Reports (Người 3 điền bản đồ Leaflet/biểu đồ); trang 404.
+  - UI component tự viết bằng Tailwind thuần (`Button`/`Input`/`Card`), giao diện tiếng Việt, chưa có dark mode.
+  - Backend: `cors()` đổi sang whitelist `FRONTEND_URL` (mặc định `http://localhost:5173`).
+  - Đã test bằng `curl` (register/login/`/users/me`/CORS header) — **chưa test bằng browser** (Chrome extension của Claude chưa kết nối lúc làm), cần tự mở `npm run dev` ở `frontend/` và `backend/` rồi kiểm tra bằng mắt trước khi merge.
+- **Landing page công khai** (2026-10-14, cùng nhánh `Viet`, chưa merge): `/` đổi thành trang giới thiệu công khai (không bắt đăng nhập), màu brand `navy`/`forest` khai báo ở `src/index.css` (`@theme`) và áp lại cho toàn bộ UI cũ. Dashboard sau đăng nhập tách ra `/driver-dashboard` (role `driver`) và `/station-dashboard` (role `owner`) — map role→đường dẫn ở `src/utils/roleDashboard.js`, admin tạm điều hướng về `/reports`. Hero dùng ảnh `public/images/bg1.jpg` + gradient bám chuột + glassmorphism + parallax; có scroll-reveal và animation counter (`components/landing/`). 3 trang placeholder công khai `/gioi-thieu`, `/tin-tuc`, `/ho-tro`. **Chưa xem bằng mắt** — ưu tiên tự mở trình duyệt kiểm tra hiệu ứng động/responsive trước khi merge, nhất là phần gradient theo chuột và glassmorphism ở Hero.
 
 ---
 
@@ -68,21 +77,14 @@ Cập nhật lần cuối: **2026-10-13** (cuối phiên 2: xong Phase 3, chuẩ
 
 ---
 
-## Tiếp theo: dựng khung frontend (đang làm dở ở bước chốt lựa chọn)
+## Tiếp theo
 
-Việc này thuộc Người 2 (mình) theo `QUY_TAC_LAM_VIEC_NHOM.md` mục 2 — khung chung dựng trước, sau đó Người 3 chỉ thêm component (bản đồ Leaflet, biểu đồ). Làm trên nhánh `Viet`.
+Khung frontend (mục trên) đã xong code, **chưa test bằng browser thật và chưa merge**. Trước khi merge `Viet` → `main`:
+1. Tự chạy `docker compose up -d` (nếu chưa), `cd backend && npm run dev`, `cd frontend && cp .env.example .env && npm install && npm run dev`, mở `http://localhost:5173` kiểm tra bằng mắt: đăng ký, đăng nhập, đăng xuất, route bảo vệ (vào `/reports` bằng tài khoản `driver` phải bị đẩy về `/`), reload trang vẫn giữ đăng nhập (do `/users/me` chạy lại qua token lưu `localStorage`).
+2. Cân nhắc cài ESLint + Prettier + Husky cho `frontend/` (và `backend/` — chưa có) theo mục 7 `QUY_TAC_LAM_VIEC_NHOM.md`.
+3. Báo nhóm: Người 3 có thể bắt đầu điền bản đồ Leaflet vào `frontend/src/pages/StationsPage.jsx` và biểu đồ vào `ReportsPage.jsx`, **không sửa** `App.jsx`/`Layout.jsx`/`ProtectedRoute.jsx`/`context/`/`api/` (file khung của Người 2) mà không báo trước.
 
-**Lựa chọn đề xuất (user chưa xác nhận, mặc định nếu không ý kiến): React + Vite + JavaScript + Tailwind**, version khoá cứng. Lý do JS: Người 3 sẽ code vào frontend, quy tắc nhóm ghi `App.jsx`.
-
-Phạm vi khung:
-1. Project React + Vite trong `frontend/`, version cứng.
-2. Routing + layout chung (navbar, trang 404).
-3. API client gốc: gắn `Authorization: Bearer`, đọc envelope `success/data/error`, tự gọi `/auth/refresh` khi access token hết hạn.
-4. Trang login/register nối backend thật + route bảo vệ theo role (driver/owner/admin).
-5. Trang placeholder: Bản đồ trạm, Đặt chỗ, Báo cáo (Người 3 điền bản đồ/biểu đồ).
-6. Backend: đổi `cors()` sang whitelist origin frontend (mục Phase 4).
-
-Sau đó: **Phase 4 — Bảo mật hạ tầng**: `express-rate-limit` cho `/auth/login`, validate body bằng `zod` (hiện validate tay trong `services/users.ts`), logging `pino`/`winston` + ghi `audit_logs`, `npm audit`. Chi tiết ở `docs/ROADMAP.md`.
+Sau đó: **Phase 4 — Bảo mật hạ tầng** (còn lại): `express-rate-limit` cho `/auth/login`, validate body bằng `zod` (hiện validate tay trong `services/users.ts`), logging `pino`/`winston` + ghi `audit_logs`, `npm audit`. Chi tiết ở `docs/ROADMAP.md`.
 
 ---
 
