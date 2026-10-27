@@ -230,4 +230,4 @@ Thêm `error.code`: `PAYMENT_NOT_FOUND` (404), `INVALID_SIGNATURE` (400 — hash
 
 - Field/endpoint nào đã chốt ở đây mà cần đổi tên, đổi kiểu, hoặc xoá → **báo nhóm trước**, sửa file này trước, rồi cả 3 người cùng sửa code theo. Không đổi code trước rồi báo sau.
 - Thêm **field mới** (không đổi field cũ) không cần họp — chỉ cần thêm vào đây rồi báo nhóm 1 câu trong chat để người khác biết.
-- Mọi route backend viết ra **phải** đúng response envelope ở mục 2 — xem `backend/src/routes/health.ts` làm mẫu.
+- Mọi route backend viết ra **phải** đúng response envelope ở mục 2 — xem `backend/src/routes/health.js` làm mẫu.

@@ -1,21 +1,7 @@
-import { RequestHandler } from 'express';
-import { Role, verifyAccessToken } from '../services/token';
-import { AppError } from '../utils/http';
+const { verifyAccessToken } = require('../services/token');
+const { AppError } = require('../utils/http');
 
-export interface AuthUser {
-  id: number;
-  role: Role;
-}
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthUser;
-    }
-  }
-}
-
-export const authMiddleware: RequestHandler = (req, _res, next) => {
+const authMiddleware = (req, _res, next) => {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     next(new AppError(401, 'UNAUTHORIZED', 'Thiếu access token'));
@@ -31,8 +17,8 @@ export const authMiddleware: RequestHandler = (req, _res, next) => {
 };
 
 // Dùng sau authMiddleware: rbacMiddleware('admin'), rbacMiddleware('owner', 'admin')...
-export const rbacMiddleware =
-  (...roles: Role[]): RequestHandler =>
+const rbacMiddleware =
+  (...roles) =>
   (req, _res, next) => {
     if (!req.user) {
       next(new AppError(401, 'UNAUTHORIZED', 'Chưa đăng nhập'));
@@ -46,8 +32,10 @@ export const rbacMiddleware =
   };
 
 // Chống IDOR: chỉ chủ sở hữu tài nguyên hoặc admin được thao tác
-export const assertOwnerOrAdmin = (user: AuthUser, ownerId: number) => {
+const assertOwnerOrAdmin = (user, ownerId) => {
   if (user.role !== 'admin' && user.id !== ownerId) {
     throw new AppError(403, 'FORBIDDEN', 'Không có quyền trên tài nguyên này');
   }
 };
+
+module.exports = { authMiddleware, rbacMiddleware, assertOwnerOrAdmin };

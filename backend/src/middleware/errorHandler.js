@@ -1,11 +1,10 @@
-import { ErrorRequestHandler, RequestHandler } from 'express';
-import { AppError, fail } from '../utils/http';
+const { AppError, fail } = require('../utils/http');
 
-export const notFoundHandler: RequestHandler = (_req, res) => {
+const notFoundHandler = (_req, res) => {
   fail(res, 404, 'NOT_FOUND', 'Không tìm thấy endpoint');
 };
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+const errorHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
     fail(res, err.status, err.code, err.message);
     return;
@@ -19,3 +18,5 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   // Không trả err.message ra ngoài để tránh lộ chi tiết nội bộ (câu SQL, stack...)
   fail(res, 500, 'INTERNAL_ERROR', 'Lỗi máy chủ');
 };
+
+module.exports = { notFoundHandler, errorHandler };

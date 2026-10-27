@@ -1,13 +1,13 @@
-import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { query } from '../db';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../services/token';
-import { emailTakenError, findUserByEmail, findUserById, isUniqueViolation, toUser, UserRow } from '../services/users';
-import { logAudit } from '../services/audit';
-import { AppError, asyncHandler, ok } from '../utils/http';
-import { loginRateLimiter } from '../middleware/rateLimiter';
-import { loginSchema, refreshSchema, registerSchema } from '../validation/schemas';
-import { validateBody } from '../validation/validate';
+const { Router } = require('express');
+const bcrypt = require('bcryptjs');
+const { query } = require('../db');
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../services/token');
+const { emailTakenError, findUserByEmail, findUserById, isUniqueViolation, toUser } = require('../services/users');
+const { logAudit } = require('../services/audit');
+const { AppError, asyncHandler, ok } = require('../utils/http');
+const { loginRateLimiter } = require('../middleware/rateLimiter');
+const { loginSchema, refreshSchema, registerSchema } = require('../validation/schemas');
+const { validateBody } = require('../validation/validate');
 
 const router = Router();
 
@@ -16,7 +16,7 @@ const BCRYPT_ROUNDS = 10;
 // tránh dò email qua thời gian phản hồi
 const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing', BCRYPT_ROUNDS);
 
-const issueTokens = (user: UserRow) => ({
+const issueTokens = (user) => ({
   user: toUser(user),
   accessToken: signAccessToken(user.id, user.role),
   refreshToken: signRefreshToken(user.id, user.role),
@@ -77,4 +77,4 @@ router.post(
   }),
 );
 
-export default router;
+module.exports = router;

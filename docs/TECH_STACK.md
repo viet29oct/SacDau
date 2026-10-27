@@ -43,7 +43,7 @@ Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây l
 | Thành phần | Công nghệ | Mục đích |
 |---|---|---|
 | Runtime | Node.js (bản LTS, đã chốt `24.x`) | Môn Ngôn ngữ kịch bản |
-| Ngôn ngữ | **TypeScript** (chốt ở Phase 1, thay cho JS thuần) | Dev chạy bằng `tsx watch`, build bằng `tsc` |
+| Ngôn ngữ | **JavaScript (CommonJS)** (đổi lại từ TypeScript ngày 2026-10-27, theo yêu cầu môn Ngôn ngữ kịch bản) | Dev chạy bằng `node --watch`, không cần bước build |
 | Framework | Express | Dựng REST API |
 | MQTT client | `mqtt` | Backend đăng ký nhận dữ liệu từ broker |
 | Truy cập CSDL | `pg` (node-postgres) | Dùng truy vấn tham số hóa, tránh SQL Injection |
@@ -60,7 +60,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Thành phần | Công nghệ | Ghi chú |
 |---|---|---|
 | Cổng thanh toán | VNPay **sandbox** | Không dùng tiền thật; cần tự đăng ký tài khoản sandbox tại `sandbox.vnpayment.vn` để lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET` |
-| Ký request/verify callback | `crypto` (built-in Node.js, HMAC-SHA512) | Không cần SDK bên thứ 3, tự viết helper `backend/src/services/vnpay.ts` |
+| Ký request/verify callback | `crypto` (built-in Node.js, HMAC-SHA512) | Không cần SDK bên thứ 3, tự viết helper `backend/src/services/vnpay.js` |
 | Luồng | Pay sau khi phiên sạc kết thúc (không pay lúc đặt chỗ) | Chi tiết luồng + endpoint: `docs/contracts.md` mục 4, `docs/FEATURES.md` mục 3 |
 
 ### 2.3 Bảo mật (môn Web an toàn) [Bắt buộc]
@@ -78,7 +78,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Giới hạn tần suất | `express-rate-limit` (chống brute force `/auth/login`, chốt ở Phase 4) |
 | CORS | `cors` cấu hình whitelist qua `FRONTEND_URL` |
 | HTTPS | Chứng chỉ tự ký khi chạy local (mkcert) [Nên có] |
-| Ghi log | **`pino`** (chốt ở Phase 4) — `pino-http` log mọi request, `src/services/audit.ts` ghi riêng đăng nhập + thao tác nhạy cảm vào bảng `audit_logs` |
+| Ghi log | **`pino`** (chốt ở Phase 4) — `pino-http` log mọi request, `src/services/audit.js` ghi riêng đăng nhập + thao tác nhạy cảm vào bảng `audit_logs` |
 
 **Công cụ kiểm thử bảo mật** (phục vụ phần báo cáo):
 
@@ -115,7 +115,7 @@ Bảng đã migrate thật (Phase 1 + bổ sung thanh toán): `users`, `stations
 
 | Thành phần | Công nghệ | Ghi chú |
 |---|---|---|
-| Phần mềm GIS | QGIS (bản LTR) | Kết nối trực tiếp PostGIS |
+| Phần mềm GIS | **QGIS 3.44 LTR** | Kết nối trực tiếp PostGIS. **Không dùng QGIS 4.x** — bản 4.2.2 gặp access violation khi chạy QuickOSM (`addMapLayer`, lỗi tương thích Qt6, xem `gis/` ghi chú 2026-10-20), 3.44 LTR ổn định và được QuickOSM hỗ trợ tốt hơn |
 | Lập trình | PyQGIS (Python) | Viết script hoặc plugin nhỏ phân tích vùng phục vụ |
 | Dữ liệu nền | OpenStreetMap (đường, ranh giới hành chính) | Tải bằng QuickOSM hoặc Geofabrik |
 | Định dạng trao đổi | GeoJSON, Shapefile | Xuất, nhập dữ liệu để minh họa chuẩn hóa dữ liệu |

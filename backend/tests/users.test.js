@@ -1,7 +1,7 @@
-import request from 'supertest';
-import app from '../src/app';
-import pool from '../src/db';
-import { createAdmin, registerUser, resetDb } from './helpers';
+const request = require('supertest');
+const app = require('../src/app');
+const pool = require('../src/db');
+const { createAdmin, registerUser, resetDb } = require('./helpers');
 
 beforeEach(resetDb);
 afterAll(() => pool.end());
