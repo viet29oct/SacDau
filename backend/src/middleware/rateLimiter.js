@@ -1,8 +1,8 @@
-import rateLimit from 'express-rate-limit';
-import { fail } from '../utils/http';
+const rateLimit = require('express-rate-limit');
+const { fail } = require('../utils/http');
 
 // Chống brute force /auth/login: tối đa 10 lần thử / 15 phút / IP
-export const loginRateLimiter = rateLimit({
+const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: true,
@@ -11,3 +11,5 @@ export const loginRateLimiter = rateLimit({
     fail(res, 429, 'TOO_MANY_REQUESTS', 'Thử đăng nhập quá nhiều lần, vui lòng thử lại sau');
   },
 });
+
+module.exports = { loginRateLimiter };

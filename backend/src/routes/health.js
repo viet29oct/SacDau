@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import pool from '../db';
+const { Router } = require('express');
+const pool = require('../db');
 
 const router = Router();
 
@@ -11,9 +11,9 @@ router.get('/health', async (_req, res) => {
     res.status(500).json({
       success: false,
       data: null,
-      error: { code: 'DB_UNAVAILABLE', message: (err as Error).message },
+      error: { code: 'DB_UNAVAILABLE', message: err.message },
     });
   }
 });
 
-export default router;
+module.exports = router;

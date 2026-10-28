@@ -1,8 +1,8 @@
-import request from 'supertest';
-import jwt from 'jsonwebtoken';
-import app from '../src/app';
-import pool from '../src/db';
-import { registerUser, resetDb } from './helpers';
+const request = require('supertest');
+const jwt = require('jsonwebtoken');
+const app = require('../src/app');
+const pool = require('../src/db');
+const { registerUser, resetDb } = require('./helpers');
 
 beforeEach(resetDb);
 afterAll(() => pool.end());
@@ -92,7 +92,7 @@ describe('Route cần token', () => {
 
   it('token hết hạn -> 401', async () => {
     const { user } = await registerUser();
-    const expired = jwt.sign({ role: 'driver', exp: Math.floor(Date.now() / 1000) - 60 }, process.env.JWT_SECRET!, {
+    const expired = jwt.sign({ role: 'driver', exp: Math.floor(Date.now() / 1000) - 60 }, process.env.JWT_SECRET, {
       subject: String(user.id),
     });
     const res = await request(app).get('/users/me').set('Authorization', `Bearer ${expired}`);

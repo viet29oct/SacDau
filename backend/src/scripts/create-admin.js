@@ -1,9 +1,10 @@
 // Tạo tài khoản admin (API /auth/register không cho tự đăng ký role admin).
 // Dùng: npm run create-admin -- "Tên Admin" admin@example.com matkhau123
-import 'dotenv/config';
-import bcrypt from 'bcryptjs';
-import pool, { query } from '../db';
-import { parseEmail, parseName, parsePassword } from '../services/users';
+require('dotenv/config');
+const bcrypt = require('bcryptjs');
+const pool = require('../db');
+const { query } = require('../db');
+const { parseEmail, parseName, parsePassword } = require('../services/users');
 
 const main = async () => {
   const [rawName, rawEmail, rawPassword] = process.argv.slice(2);
