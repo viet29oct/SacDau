@@ -67,8 +67,13 @@ export default function RegisterPage() {
                 onChange={(e) => setForm({ ...form, role: e.target.value })}
               >
                 <option value="driver">Tài xế</option>
-                <option value="owner">Chủ trạm</option>
+                <option value="owner">Quản lý trạm</option>
               </select>
+              {form.role === 'owner' && (
+                <p className="text-xs text-slate-500">
+                  Tài khoản quản lý trạm sẽ được admin phân công trạm cụ thể sau khi đăng ký.
+                </p>
+              )}
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={submitting}>

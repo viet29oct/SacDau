@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardPathForRole } from '../utils/roleDashboard';
 
-const roleLabel = { driver: 'Tài xế', owner: 'Chủ trạm', admin: 'Quản trị viên' };
+const roleLabel = { driver: 'Tài xế', owner: 'Quản lý trạm', admin: 'Quản trị viên' };
 
 export default function Navbar() {
   const { user, logout } = useAuth();

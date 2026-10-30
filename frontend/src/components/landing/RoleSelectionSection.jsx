@@ -15,8 +15,8 @@ const roles = [
   {
     key: 'owner',
     image: '/images/chutram.png',
-    title: 'Dành cho Chủ trạm',
-    desc: 'Quản lý trạm sạc, theo dõi doanh thu và báo cáo vận hành.',
+    title: 'Dành cho Quản lý trạm',
+    desc: 'Theo dõi và vận hành các trạm được công ty phân công, xem báo cáo doanh thu.',
     path: '/station-dashboard',
   },
 ];
