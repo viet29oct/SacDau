@@ -5,6 +5,13 @@ process.env.DATABASE_URL =
 process.env.JWT_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
 
+// VNPay: không gọi mạng thật trong test, chỉ cần đủ biến để buildPaymentUrl/verifySignature không throw
+process.env.VNPAY_TMN_CODE = 'TESTTMN';
+process.env.VNPAY_HASH_SECRET = 'test_vnpay_hash_secret';
+process.env.VNPAY_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
+process.env.VNPAY_RETURN_URL = 'http://localhost:3000/payments/vnpay-return';
+process.env.UNIT_PRICE_PER_KWH = '3500';
+
 if (!/_test$/.test(new URL(process.env.DATABASE_URL).pathname)) {
   throw new Error('DATABASE_URL của test phải trỏ tới DB có tên kết thúc bằng _test');
 }

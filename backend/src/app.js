@@ -5,6 +5,11 @@ const pinoHttp = require('pino-http');
 const healthRouter = require('./routes/health');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const stationsRouter = require('./routes/stations');
+const bookingsRouter = require('./routes/bookings');
+const reportsRouter = require('./routes/reports');
+const sessionsRouter = require('./routes/sessions');
+const paymentsRouter = require('./routes/payments');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { logger } = require('./logger');
 
@@ -20,6 +25,11 @@ app.use(pinoHttp({ logger, autoLogging: { ignore: (req) => req.url === '/health'
 app.use(healthRouter);
 app.use(authRouter);
 app.use(usersRouter);
+app.use(stationsRouter);
+app.use(bookingsRouter);
+app.use(reportsRouter);
+app.use(sessionsRouter);
+app.use(paymentsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

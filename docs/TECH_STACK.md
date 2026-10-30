@@ -4,6 +4,8 @@ Tài liệu này liệt kê công nghệ cần có cho dự án dùng chung 5 m�
 
 Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu môn, **[Nên có]** tăng chất lượng, **[Tùy chọn]** làm nếu còn thời gian.
 
+> **Cập nhật mô hình nghiệp vụ (2026-10-29):** bỏ marketplace (chủ trạm tự đăng ký), chuyển sang 1 công ty vận hành nhiều trạm — `admin` phân công `owner` quản lý. Không đổi công nghệ nền tảng, chỉ nâng WebSocket lên **[Bắt buộc]** (mục 2.2) và thêm hằng số đơn giá điện (mục 2.2b). Chi tiết nghiệp vụ: `docs/contracts.md`, `docs/FEATURES.md`.
+
 ---
 
 ## 1. Tổng quan theo tầng
@@ -51,7 +53,7 @@ Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây l
 | Biến môi trường | `dotenv` | Không để mật khẩu trong mã nguồn |
 | Tài liệu API | `swagger-ui-express` + OpenAPI | Tài liệu endpoint, dùng cho báo cáo |
 | Kiểm thử | `jest` + `supertest` | Kiểm thử endpoint [Nên có] |
-| Thời gian thực | `ws` hoặc `socket.io` | Đẩy trạng thái trạm lên giao diện [Nên có] |
+| Thời gian thực | `ws` hoặc `socket.io` | Đẩy trạng thái port/phiên sạc real-time lên giao diện — event `port:update`/`session:update` theo `docs/contracts.md` mục 1b **[Bắt buộc]** (nâng từ "Nên có" lên "Bắt buộc" 2026-10-29, mô hình nghiệp vụ mới yêu cầu real-time) |
 
 Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`docs/contracts.md`** mục 4.
 
@@ -62,6 +64,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Cổng thanh toán | VNPay **sandbox** | Không dùng tiền thật; cần tự đăng ký tài khoản sandbox tại `sandbox.vnpayment.vn` để lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET` |
 | Ký request/verify callback | `crypto` (built-in Node.js, HMAC-SHA512) | Không cần SDK bên thứ 3, tự viết helper `backend/src/services/vnpay.js` |
 | Luồng | Pay sau khi phiên sạc kết thúc (không pay lúc đặt chỗ) | Chi tiết luồng + endpoint: `docs/contracts.md` mục 4, `docs/FEATURES.md` mục 3 |
+| Đơn giá điện | Hằng số `UNIT_PRICE_PER_KWH` (biến môi trường, mặc định `3500` VNĐ/kWh) | Backend tự tính `cost = energy_kwh * UNIT_PRICE_PER_KWH` khi đóng phiên sạc *(thêm 2026-10-29, xem `docs/contracts.md` mục 1)* |
 
 ### 2.3 Bảo mật (môn Web an toàn) [Bắt buộc]
 
@@ -69,10 +72,11 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 |---|---|
 | Mã hóa mật khẩu | `bcryptjs` (cùng thuật toán bcrypt, thuần JS — không cần build native trên Windows) |
 | Xác thực | JWT (`jsonwebtoken`), access token ngắn hạn + refresh token |
-| Phân quyền | RBAC 3 vai trò: tài xế, chủ trạm, quản trị viên; kiểm tra quyền sở hữu tài nguyên để chống IDOR |
+| Phân quyền | RBAC 3 vai trò: tài xế, quản lý trạm (`owner`, do admin phân công — không tự tạo trạm), quản trị viên; kiểm tra quyền sở hữu tài nguyên để chống IDOR (`owner` chỉ thao tác trạm có `owner_id` là mình) |
 | Chống SQL Injection | Truy vấn tham số hóa (`$1, $2`), không nối chuỗi |
 | Chống XSS | Escape đầu ra, Content-Security-Policy (qua `helmet`) |
 | Chống CSRF | Cookie `SameSite`, CSRF token nếu dùng cookie |
+| Chống Timing Attack | So sánh thời gian ổn định ở `/auth/login` khi email không tồn tại — tránh lộ email có tồn tại hay không qua độ trễ phản hồi *(thêm 2026-10-29, mô hình nghiệp vụ mới)* |
 | Kiểm tra đầu vào | **`zod`** (chốt ở Phase 4) — validate toàn bộ route nhận body qua `src/validation/` |
 | Header bảo mật | `helmet` |
 | Giới hạn tần suất | `express-rate-limit` (chống brute force `/auth/login`, chốt ở Phase 4) |
