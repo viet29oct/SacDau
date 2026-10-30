@@ -4,6 +4,8 @@
 
 Khớp với schema DB thật đã migrate ở `backend/migrations/1791819717249_init.js` (bảng `users`, `stations`, `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`).
 
+> **Cập nhật mô hình nghiệp vụ (2026-10-29):** Bỏ mô hình marketplace (chủ trạm tự đăng ký trạm độc lập). Chuyển sang mô hình **1 công ty vận hành nhiều trạm sạc**: `admin` tạo/sửa/xoá trạm và phân công `ownerId` cho nhân viên quản lý (`owner`); `owner` không tự tạo trạm, chỉ quản lý các trạm được phân công. Không đổi schema DB (`stations.owner_id` đã có sẵn từ migration gốc). Chi tiết: mục 1b (WebSocket), mục 3 (object `Station`/`ChargingSession`), mục 4 (endpoint `/stations`, `/bookings`, `/payments`).
+
 ---
 
 ## 0. Quy ước chung (áp dụng cho mọi API)
@@ -49,7 +51,31 @@ Khớp với schema DB thật đã migrate ở `backend/migrations/1791819717249
 
 Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`power_kw`, `energyKwh`→`energy_kwh`, `timestamp`→`recorded_at`).
 
+**Quy tắc xử lý trên backend khi nhận bản tin (đã chốt — IoT → Server 1 chiều, server không gửi lệnh điều khiển ngược xuống ESP32):**
+
+1. Luôn `INSERT` một bản ghi mới vào `telemetry`, rồi cập nhật `ports.status = payload.status`.
+2. `status = "charging"` và port **chưa** có phiên mở (`charging_sessions` với `port_id` này và `ended_at IS NULL`) → mở phiên mới:
+   - Tìm `bookings` cùng `port_id`, `status = 'confirmed'`, thỏa `start_time <= now <= end_time` để gán `booking_id`.
+   - **Không tìm thấy booking khớp vẫn mở phiên bình thường** với `booking_id = NULL` (khách vãng lai, không đặt chỗ trước).
+   - `energy_kwh` lấy từ `payload.energyKwh` (quy ước ESP32 gửi `0` khi vừa cắm sạc/bắt đầu phiên mới).
+3. `status = "charging"` và port **đã** có phiên mở → chỉ cập nhật `energy_kwh = payload.energyKwh` (phiên có thể kéo dài quá `endTime` dự kiến của booking, vẫn tiếp tục mở cho tới khi nhận `idle`/`fault`).
+4. `status = "idle"` hoặc `status = "fault"` và port đang có phiên mở → đóng phiên: `ended_at = now`, `energy_kwh = payload.energyKwh ?? energy_kwh hiện tại`, `cost = energy_kwh * UNIT_PRICE_PER_KWH` (hằng số đơn giá, mặc định `3500` VNĐ/kWh — thêm biến `UNIT_PRICE_PER_KWH` vào `backend/.env.example`).
+5. Sau mỗi bước 2–4, phát sự kiện WebSocket cho frontend (xem mục 1b).
+
 **Mock khi chưa có ESP32 thật:** dùng `iot/mock/mockPublisher.js` (đã mô tả ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 6a), publish đúng payload trên.
+
+---
+
+## 1b. WebSocket — đẩy trạng thái real-time (Backend → Frontend)
+
+Không theo envelope `success/data/error` ở mục 2 (đây là sự kiện WS, không phải response HTTP). Kênh public, không yêu cầu token (giống `GET /stations`, chỉ là xem trạng thái).
+
+| Event | Payload | Khi nào phát |
+|---|---|---|
+| `port:update` | `{ stationId, portId, status, powerKw, energyKwh, temperature, recordedAt }` | Mỗi khi backend nhận bản tin MQTT và cập nhật `ports.status` (bước 1 ở mục 1) |
+| `session:update` | object `ChargingSession` (mục 3) | Mỗi khi phiên sạc được mở/cập nhật/đóng (bước 2–4 ở mục 1) |
+
+Thư viện dùng `ws` hoặc `socket.io` (chốt ở `TECH_STACK.md` mục 2.2) — tên event/payload ở trên là hợp đồng cố định, không phụ thuộc thư viện chọn.
 
 ---
 
@@ -76,8 +102,10 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 | `FORBIDDEN` | 403 | Có token nhưng không đủ quyền (RBAC) hoặc không sở hữu tài nguyên (chống IDOR) |
 | `NOT_FOUND` | 404 | ID không tồn tại (generic) |
 | `STATION_NOT_FOUND` | 404 | Riêng cho `/stations/:id` |
+| `STATION_CODE_ALREADY_EXISTS` | 409 | `POST /stations` với `code` đã tồn tại *(thêm khi code hoá, mô hình nghiệp vụ mới)* |
 | `PORT_UNAVAILABLE` | 409 | Đặt chỗ vào port đang `charging`/`fault` |
-| `BOOKING_CONFLICT` | 409 | Trùng khung giờ đặt chỗ |
+| `BOOKING_CONFLICT` | 409 | Trùng khung giờ đặt chỗ (cùng `port_id`, booking khác chưa `cancelled`) |
+| `BOOKING_CANCEL_NOT_ALLOWED` | 400 | Hủy booking đã `cancelled` hoặc đã quá giờ `startTime` *(thêm 2026-10-29, mô hình nghiệp vụ mới)* |
 | `EMAIL_ALREADY_EXISTS` | 409 | Đăng ký hoặc đổi email trùng với tài khoản khác *(thêm 2026-10-13, Phase 3)* |
 | `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (hiện áp cho `/auth/login`, chống brute force) *(thêm 2026-10-14, Phase 4)* |
 | `INTERNAL_ERROR` | 500 | Lỗi server không xác định |
@@ -108,6 +136,10 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 ```
 
 `location` map từ cột `geom` (PostGIS `GEOMETRY(Point,4326)`) qua `ST_X`/`ST_Y`. GIS/Frontend chỉ thấy `{lat, lng}`, không cần biết PostGIS.
+
+`ownerId` = tài khoản `owner` được **admin phân công** quản lý trạm này (không phải người tự tạo trạm — xem mô hình nghiệp vụ ở đầu file). Có thể `null` nếu trạm chưa được phân công ai quản lý.
+
+Station còn có cột `code` (mã trạm IoT gửi lên MQTT, vd `"ST01"` — xem mục 1) nhưng **không trả ra qua API** (chỉ dùng nội bộ để backend tra cứu khi nhận bản tin MQTT), tránh lộ thêm field ngoài hợp đồng đã chốt.
 
 ### Port
 
@@ -147,7 +179,7 @@ Backend lưu nguyên payload này vào bảng `telemetry` (map `powerKw`→`powe
 }
 ```
 
-`endedAt`/`cost` có thể `null` khi phiên đang chạy.
+`endedAt`/`cost` có thể `null` khi phiên đang chạy. `bookingId` có thể `null` — phiên sạc vãng lai (tài xế cắm sạc không qua đặt chỗ trước); phiên vãng lai **không thanh toán được qua hệ thống** (không có tài xế gắn với phiên để xác định quyền thanh toán, xem mục 4).
 
 ### Payment
 
@@ -188,14 +220,20 @@ Access token hết hạn sau 15 phút, refresh token sau 7 ngày (ký bằng 2 s
 | GET | `/reports/revenue?from=&to=` | — | `{ totalRevenue, totalSessions, byStation: [{ stationId, revenue }] }` |
 | GET | `/reports/usage?from=&to=` | — | `{ byHour: [{ hour, count }], byStation: [{ stationId, count }] }` |
 
+**Quy tắc `/bookings` (đã chốt):** `startTime >= hiện tại` và `endTime > startTime` (sai → `400 VALIDATION_ERROR`); trùng khung giờ với booking khác cùng `port_id` (status khác `cancelled`) → `409 BOOKING_CONFLICT`; không trùng → tạo ngay `status = 'confirmed'` (bỏ qua bước `pending`, xác nhận ngay không cần duyệt). Hủy (`PATCH /bookings/:id/cancel`) chỉ hợp lệ khi: booking thuộc chính tài xế gọi API, chưa `cancelled`, và còn **trước** giờ `startTime` — vi phạm → `400 BOOKING_CANCEL_NOT_ALLOWED` (không thuộc về mình → `403 FORBIDDEN`, không tồn tại → `404 NOT_FOUND`).
+
 ### Người 3 — `/stations`
+
+Mô hình mới: chỉ **admin** tạo/xoá trạm và phân công người quản lý; **owner** chỉ xem/sửa thông tin vận hành của trạm mình được phân công (`stations.owner_id === req.user.id`), không tự tạo trạm.
 
 | Method | Path | Body/Query | `data` trả về |
 |---|---|---|---|
-| GET | `/stations` | query `?near=lat,lng&radiusKm=` *(tùy chọn, dùng PostGIS `ST_DWithin`)* | `Station[]` |
-| GET | `/stations/:id` | — | `Station` |
-| POST | `/stations` *(owner/admin)* | `{ name, lat, lng }` | `Station` |
-| PATCH | `/stations/:id` *(owner/admin)* | `{ name?, lat?, lng? }` | `Station` |
+| GET | `/stations` | query `?near=lat,lng&radiusKm=` *(tùy chọn, dùng PostGIS `ST_DWithin`)* — public, không cần đăng nhập | `Station[]` |
+| GET | `/stations/:id` | — — public | `Station` kèm `ports[]` |
+| POST | `/stations` *(chỉ admin)* | `{ name, code, lat, lng, portsCount? }` — `code` là mã trạm IoT gửi lên MQTT (vd `"ST01"`), `portsCount` mặc định `1`, tạo kèm N cổng đánh số 1..N | `Station` |
+| PATCH | `/stations/:id` *(owner được phân công/admin)* | `{ name?, lat?, lng? }` | `Station` |
+| DELETE | `/stations/:id` *(chỉ admin)* | — | — |
+| PATCH | `/stations/:id/assign-owner` *(chỉ admin)* | `{ ownerId }` | `Station` |
 
 ### Người 1 (ingest qua MQTT) + Người 2 (expose đọc) — `/sessions`
 
@@ -208,6 +246,8 @@ Access token hết hạn sau 15 phút, refresh token sau 7 ngày (ký bằng 2 s
 
 Thanh toán xảy ra **sau khi phiên sạc kết thúc** (`charging_sessions.cost` đã có giá trị cuối), không thanh toán lúc đặt chỗ.
 
+**Điều kiện được tạo thanh toán (`POST /payments`):** `ended_at IS NOT NULL`, `cost > 0`, chưa có bản ghi `payments` nào `status = 'success'` cho phiên này, và phiên phải gắn với tài xế đang đăng nhập qua `charging_sessions.booking_id → bookings.user_id === req.user.id`. Phiên vãng lai (`bookingId = null`) không đủ điều kiện — nằm ngoài phạm vi thanh toán online (xem mục 3 object `ChargingSession`).
+
 | Method | Path | Body | `data` trả về |
 |---|---|---|---|
 | POST | `/payments` | `{ chargingSessionId }` | `{ paymentUrl }` — link redirect sang VNPay sandbox |
@@ -216,7 +256,7 @@ Thanh toán xảy ra **sau khi phiên sạc kết thúc** (`charging_sessions.co
 **2 route đặc biệt — KHÔNG theo envelope `success/data/error` chuẩn**, vì định dạng do VNPay quy định, không phải do mình tự chọn:
 
 - `GET /payments/vnpay-return` — VNPay redirect **trình duyệt của người dùng** về đây kèm query `vnp_*` + `vnp_SecureHash`. Backend verify hash (HMAC-SHA512 bằng `VNPAY_HASH_SECRET`), update `payments.status`, rồi **redirect tiếp** về frontend (`/payment-result?status=success|failed`) — không trả JSON.
-- `POST /payments/vnpay-ipn` — VNPay **server** gọi ngầm (không phải người dùng) để xác nhận giao dịch thật. Backend verify hash tương tự, rồi **phải trả đúng format VNPay yêu cầu**: `{ "RspCode": "00", "Message": "Confirm Success" }` (hoặc code lỗi tương ứng) — sai format này VNPay sẽ coi là thất bại và gọi lại nhiều lần.
+- `GET /payments/vnpay-ipn` — VNPay **server** gọi ngầm (không phải người dùng) để xác nhận giao dịch thật, bằng **GET** (tài liệu chính thức VNPay: mục IPN, "Phương thức: GET" — không phải POST). Backend verify hash tương tự, rồi **phải trả đúng format VNPay yêu cầu**: `{ "RspCode": "00", "Message": "Confirm Success" }` (hoặc code lỗi tương ứng) — sai format này VNPay sẽ coi là thất bại và gọi lại nhiều lần.
 
 Thêm `error.code`: `PAYMENT_NOT_FOUND` (404), `INVALID_SIGNATURE` (400 — hash VNPay gửi về không khớp, nghi giả mạo), `PAYMENT_ALREADY_PROCESSED` (409 — IPN gọi lại cho giao dịch đã xử lý xong).
 
