@@ -106,21 +106,28 @@ const isoDateTimeField = (label) =>
     return date;
   });
 
-// Cho phép sai số 1 phút (độ trễ mạng/clock skew) khi so với "hiện tại"
+// Luật thời gian còn lại (không ở quá khứ, tối đa 7 ngày, 15'-4h, giờ phục vụ) kiểm tra ở
+// services/bookings.js -> assertBookingWindow, để dùng chung 1 mốc "now" với phần còn lại của route.
 const createBookingSchema = z
   .object({
     portId: z.number({ error: () => 'portId là bắt buộc' }).int().positive(),
     startTime: isoDateTimeField('startTime'),
     endTime: isoDateTimeField('endTime'),
   })
-  .refine((data) => data.startTime.getTime() >= Date.now() - 60 * 1000, {
-    message: 'startTime phải lớn hơn hoặc bằng hiện tại',
-    path: ['startTime'],
-  })
   .refine((data) => data.endTime.getTime() > data.startTime.getTime(), {
     message: 'endTime phải lớn hơn startTime',
     path: ['endTime'],
   });
+
+const cancelBookingSchema = z.object({
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+
+const checkInSchema = z.object({
+  code: z.string({ error: () => 'code là bắt buộc' }).regex(/^\d{6}$/, 'code phải gồm 6 chữ số'),
+  portId: z.number().int().positive().optional(),
+  attachSessionId: z.number().int().positive().optional(),
+});
 
 const createPaymentSchema = z.object({
   chargingSessionId: z.number({ error: () => 'chargingSessionId là bắt buộc' }).int().positive(),
@@ -141,5 +148,7 @@ module.exports = {
   assignOwnerSchema,
   portServiceSchema,
   createBookingSchema,
+  cancelBookingSchema,
+  checkInSchema,
   createPaymentSchema,
 };

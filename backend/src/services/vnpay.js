@@ -29,13 +29,20 @@ const sign = (sortedParams, hashSecret) =>
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
-// Định dạng vnp_CreateDate VNPay yêu cầu: yyyyMMddHHmmss
-const toVnpDate = (date = new Date()) =>
-  `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}` +
-  `${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`;
+// Định dạng vnp_CreateDate/vnp_ExpireDate VNPay yêu cầu: yyyyMMddHHmmss theo giờ Việt Nam (GMT+7).
+// Tính tường minh từ UTC, không phụ thuộc múi giờ của máy chạy server.
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
+const toVnpDate = (date = new Date()) => {
+  const d = new Date(date.getTime() + VN_OFFSET_MS);
+  return (
+    `${d.getUTCFullYear()}${pad2(d.getUTCMonth() + 1)}${pad2(d.getUTCDate())}` +
+    `${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}`
+  );
+};
 
-// Tạo URL redirect sang VNPay sandbox — amount tính bằng VNĐ (contracts.md), VNPay yêu cầu *100
-const buildPaymentUrl = ({ txnRef, amount, orderInfo, ipAddr }) => {
+// Tạo URL redirect sang VNPay sandbox — amount tính bằng VNĐ (contracts.md), VNPay yêu cầu *100.
+// expireDate: quá thời điểm này VNPay không cho thanh toán nữa (chặn trả cọc sau khi slot đã nhả).
+const buildPaymentUrl = ({ txnRef, amount, orderInfo, ipAddr, createDate = toVnpDate(), expireDate }) => {
   const tmnCode = requireEnv('VNPAY_TMN_CODE');
   const hashSecret = requireEnv('VNPAY_HASH_SECRET');
   const vnpUrl = requireEnv('VNPAY_URL');
@@ -53,7 +60,8 @@ const buildPaymentUrl = ({ txnRef, amount, orderInfo, ipAddr }) => {
     vnp_Locale: 'vn',
     vnp_ReturnUrl: returnUrl,
     vnp_IpAddr: ipAddr || '127.0.0.1',
-    vnp_CreateDate: toVnpDate(),
+    vnp_CreateDate: createDate,
+    vnp_ExpireDate: expireDate,
   });
 
   const secureHash = sign(params, hashSecret);
@@ -74,4 +82,4 @@ const verifySignature = (queryParams) => {
   return crypto.timingSafeEqual(expectedBuf, receivedBuf);
 };
 
-module.exports = { buildPaymentUrl, verifySignature };
+module.exports = { buildPaymentUrl, verifySignature, toVnpDate };

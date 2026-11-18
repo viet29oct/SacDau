@@ -7,6 +7,7 @@ const { validateBody } = require('../validation/validate');
 const { createPaymentSchema } = require('../validation/schemas');
 const { logAudit } = require('../services/audit');
 const vnpay = require('../services/vnpay');
+const { processIpn } = require('../services/payments');
 
 const router = Router();
 
@@ -121,31 +122,9 @@ router.get(
       res.json({ RspCode: '97', Message: 'Invalid signature' });
       return;
     }
-
-    const { rows } = await query('SELECT * FROM payments WHERE vnpay_txn_ref = $1', [params.vnp_TxnRef]);
-    const payment = rows[0];
-    if (!payment) {
-      res.json({ RspCode: '01', Message: 'Order not found' });
-      return;
-    }
-    if (payment.status !== 'pending') {
-      res.json({ RspCode: '02', Message: 'Order already confirmed' });
-      return;
-    }
-
-    if (params.vnp_ResponseCode === '00') {
-      await query("UPDATE payments SET status = 'success', paid_at = now(), vnpay_transaction_no = $1 WHERE id = $2", [
-        params.vnp_TransactionNo ?? null,
-        payment.id,
-      ]);
-      await logAudit(null, 'payment.success', { txnRef: params.vnp_TxnRef, transactionNo: params.vnp_TransactionNo });
-    } else {
-      await query("UPDATE payments SET status = 'failed' WHERE id = $1", [payment.id]);
-      await logAudit(null, 'payment.failed', { txnRef: params.vnp_TxnRef, responseCode: params.vnp_ResponseCode });
-    }
-
-    // VNPay chỉ cần biết server đã nhận & xử lý xong thông báo (RspCode 00), kể cả khi giao dịch failed
-    res.json({ RspCode: '00', Message: 'Confirm Success' });
+    // Xử lý chung cho cọc + phiên: so số tiền, booking cọc -> confirmed, trả trùng -> cần hoàn
+    // (services/payments.js). VNPay chỉ cần biết server đã nhận & xử lý xong (RspCode 00).
+    res.json(await processIpn(params));
   }),
 );
 

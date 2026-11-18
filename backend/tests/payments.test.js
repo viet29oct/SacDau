@@ -214,6 +214,7 @@ describe('GET /payments/vnpay-ipn (VNPay gọi bằng GET, phải trả đúng f
 
     const signed = withValidSignature({
       vnp_TxnRef: 'TXN6',
+      vnp_Amount: '5000000',
       vnp_ResponseCode: '00',
       vnp_TransactionNo: '14231456',
     });
@@ -235,7 +236,7 @@ describe('GET /payments/vnpay-ipn (VNPay gọi bằng GET, phải trả đúng f
       [sessionId],
     );
 
-    const signed = withValidSignature({ vnp_TxnRef: 'TXN7', vnp_ResponseCode: '00' });
+    const signed = withValidSignature({ vnp_TxnRef: 'TXN7', vnp_Amount: '5000000', vnp_ResponseCode: '00' });
     const res = await request(app).get('/payments/vnpay-ipn').query(signed);
     expect(res.body.RspCode).toBe('02');
   });
