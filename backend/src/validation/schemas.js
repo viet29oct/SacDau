@@ -129,6 +129,11 @@ const checkInSchema = z.object({
   attachSessionId: z.number().int().positive().optional(),
 });
 
+const forceCloseSchema = z.object({
+  energyKwh: z.number({ error: () => 'energyKwh phải là số' }).min(0).max(100000),
+  note: z.string({ error: () => 'note là bắt buộc' }).trim().min(1, 'note là bắt buộc').max(500),
+});
+
 const createPaymentSchema = z.object({
   chargingSessionId: z.number({ error: () => 'chargingSessionId là bắt buộc' }).int().positive(),
 });
@@ -150,5 +155,6 @@ module.exports = {
   createBookingSchema,
   cancelBookingSchema,
   checkInSchema,
+  forceCloseSchema,
   createPaymentSchema,
 };
