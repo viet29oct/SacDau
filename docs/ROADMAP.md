@@ -75,15 +75,16 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 > Đặc tả: `docs/LUONG_NGHIEP_VU.md` (chốt 2026-11-18). Mỗi bước chạy `npm test` xanh rồi commit riêng.
 
 - [x] B0 — Tài liệu: `LUONG_NGHIEP_VU.md`, cập nhật `contracts.md`/`FEATURES.md`/`TECH_STACK.md`, bỏ môn Phân tích dữ liệu (xoá `analytics/`).
-- [ ] B1 — Migration `business-flows` (cọc, check-in, phiên trái phép, phí chiếm chỗ, incidents, exclusion constraint) + `src/config/rules.js`.
-- [ ] B2 — Tài khoản: register chỉ `driver`, admin tạo `owner` (`POST /users`), khoá/mở tài khoản, `authMiddleware` đọc `is_active`/`role` từ DB.
-- [ ] B3 — Trạm/cổng: ngừng hoạt động (soft), sửa dữ liệu gốc chỉ admin, `/stations/managed`, bảo trì cổng.
-- [ ] B4 — Đặt chỗ + cọc VNPay + check-in bằng mã (khoá sau 5 lần sai, đổi cổng, gắn phiên).
-- [ ] B5 — Engine phiên sạc (`sessionEngine.js`) + job định kỳ (hết hạn cọc, no-show, watchdog offline).
-- [ ] B6 — Phiên & thanh toán: quyết toán trừ cọc, phí chiếm chỗ, IPN so số tiền, cần hoàn, `/checkout`.
-- [ ] B7 — Sự cố + báo cáo theo phạm vi owner.
-- [ ] B8 — WebSocket có xác thực (`session:update`, `alert`).
-- [ ] B9 — Mosquitto có xác thực + ACL theo trạm.
+- [x] B1 — Migration `business-flows` (cọc, check-in, phiên trái phép, phí chiếm chỗ, incidents, exclusion constraint) + `src/config/rules.js`.
+- [x] B2 — Tài khoản: register chỉ `driver`, admin tạo `owner` (`POST /users`), khoá/mở tài khoản, `authMiddleware` đọc `is_active`/`role` từ DB.
+- [x] B3 — Trạm/cổng: ngừng hoạt động (soft), sửa dữ liệu gốc chỉ admin, `/stations/managed`, bảo trì cổng.
+- [x] B4 — Đặt chỗ + cọc VNPay + check-in bằng mã (khoá sau 5 lần sai, đổi cổng, gắn phiên).
+- [x] B5 — Engine phiên sạc (`sessionEngine.js`) + job định kỳ (hết hạn cọc, no-show, watchdog offline).
+- [x] B6 — Phiên & thanh toán: quyết toán trừ cọc, phí chiếm chỗ, IPN so số tiền, cần hoàn, `/checkout`.
+- [x] B7 — Sự cố + báo cáo theo phạm vi owner.
+- [x] B8 — WebSocket có xác thực (`session:update`, `alert`).
+- [x] B9 — Mosquitto có xác thực + ACL theo trạm.
+- [ ] (Nên có) Đối soát `querydr` với VNPay trong job hết hạn cọc — lưới an toàn khi tunnel IPN bị rớt.
 - [ ] Bàn giao IoT (sketch publish ngay khi đổi trạng thái, đăng nhập broker) và frontend (màn hình quản lý trạm) — cần chốt người làm.
 
 ## Phase 6 — Kiểm thử bảo mật cuối kỳ (phục vụ báo cáo môn Web an toàn)
@@ -138,3 +139,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 - 2026-10-30 — Sửa copy frontend cho khớp mô hình nghiệp vụ mới: đổi "Chủ trạm" → "Quản lý trạm" ở `RegisterPage.jsx` (dropdown role + chú thích "sẽ được admin phân công trạm sau khi đăng ký"), `Navbar.jsx` (`roleLabel`), `RoleSelectionSection.jsx` (card "Bạn là ai?" ở landing page), `StationDashboardPage.jsx` (text chào mừng) — chỉ sửa text/copy, không đổi route/logic/style (giữ nguyên màu navy/forest). `vite build` qua. Đã commit (`677dad1`) + push lên `origin/Viet`.
   - **Ghi nhận, chưa sửa (ngoài phạm vi frontend)**: backend hiện chưa có cách để admin tự tạo/promote tài khoản `owner` — vẫn dựa vào việc user tự đăng ký role `owner` ở `/auth/register` rồi admin gán `stations.owner_id` sau. Khớp với cách frontend đang làm nên không phải lỗi, nhưng nếu nhóm muốn admin toàn quyền tạo nhân viên thì cần thêm việc ở Phase sau.
 - 2026-11-18 — Rà soát toàn bộ luồng nghiệp vụ trước các kịch bản xấu thực tế (mạch chỉ gửi 1 chiều → quản lý trạm làm cầu nối). Chốt: bỏ khách vãng lai (bắt buộc đăng nhập), cọc VNPay khi đặt chỗ (giữ chỗ 5 phút), check-in bằng mã do quản lý nhập (không còn gán phiên theo khung giờ), phiên không check-in = phiên trái phép, phí chiếm chỗ khi xe đầy pin, chỉ thanh toán VNPay (owner không cầm tiền), hoàn cọc do admin xác nhận, broker MQTT có xác thực. Bỏ môn Phân tích & trực quan hoá dữ liệu khỏi dự án (xoá `analytics/`). Viết `docs/LUONG_NGHIEP_VU.md`, cập nhật `contracts.md`/`FEATURES.md`/`TECH_STACK.md`/`README.md` (bỏ link tới `NEXT_SESSION.md` vì file này bị gitignore). Code theo Phase 5b (B1–B9).
+- 2026-11-18 — Code xong Phase 5b (B1–B9), mỗi bước 1 commit trên nhánh `Viet` (chưa push): migration `business-flows` + `payment-checkout-url` (có dọn/backfill dữ liệu cũ, đã thử up/down), `src/config/rules.js`; tài khoản (register chỉ driver, `POST /users`, khoá/mở, `authMiddleware` đọc `is_active`/`role` từ DB); trạm/cổng (soft delete, `/stations/managed`, bảo trì cổng); đặt chỗ + cọc VNPay + check-in bằng mã (khoá sau 5 lần sai, đổi cổng, gắn phiên); `services/sessionEngine.js` (gán phiên chỉ khi check-in, giữ điện năng khi ESP32 reboot, chống phiên ma/điện năng vô lý, phí chiếm chỗ, cọc trừ dần) + watchdog offline có ân hạn + scheduler; thanh toán phần còn lại, IPN so số tiền, trả trùng → cần hoàn, `/checkout`; `/incidents`; báo cáo theo phạm vi owner; WebSocket có xác thực; Mosquitto bắt buộc đăng nhập + ACL theo trạm (username = mã trạm). `npm test` 134/134 pass. Chạy thật end-to-end trên server dev (đặt ngay → IPN cọc ký bằng hash secret thật → check-in sai/đúng mã → cắm sạc qua `mosquitto_pub` có mật khẩu → giả reboot `energyKwh=0` vẫn giữ điện năng → phiên trái phép ở cổng 2 → cảnh báo WS tới quản lý, người lạ chỉ thấy `port:update` → báo cáo); đã dọn dữ liệu e2e khỏi DB dev. Còn: `querydr` (nên có), bàn giao IoT/frontend.
