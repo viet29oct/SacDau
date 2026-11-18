@@ -138,6 +138,10 @@ const createPaymentSchema = z.object({
   chargingSessionId: z.number({ error: () => 'chargingSessionId là bắt buộc' }).int().positive(),
 });
 
+const markRefundedSchema = z.object({
+  note: z.string().trim().min(1).max(500).optional(),
+});
+
 module.exports = {
   nameField,
   emailField,
@@ -157,4 +161,5 @@ module.exports = {
   checkInSchema,
   forceCloseSchema,
   createPaymentSchema,
+  markRefundedSchema,
 };
