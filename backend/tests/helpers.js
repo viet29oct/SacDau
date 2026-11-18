@@ -3,7 +3,16 @@ const bcrypt = require('bcryptjs');
 const app = require('../src/app');
 const pool = require('../src/db');
 
-const resetDb = () => pool.query('TRUNCATE users RESTART IDENTITY CASCADE');
+// DELETE theo thứ tự khoá ngoại thay cho TRUNCATE ... CASCADE: TRUNCATE phải tạo lại file cho
+// mọi bảng + index (nhiều bảng/index sau migration business-flows) -> chậm, hay timeout trên Docker Desktop.
+const resetDb = () =>
+  pool.query(`
+    DELETE FROM payments; DELETE FROM incidents; DELETE FROM telemetry; DELETE FROM charging_sessions;
+    DELETE FROM bookings; DELETE FROM ports; DELETE FROM stations; DELETE FROM audit_logs; DELETE FROM users;
+    ALTER SEQUENCE users_id_seq RESTART; ALTER SEQUENCE stations_id_seq RESTART; ALTER SEQUENCE ports_id_seq RESTART;
+    ALTER SEQUENCE bookings_id_seq RESTART; ALTER SEQUENCE charging_sessions_id_seq RESTART;
+    ALTER SEQUENCE payments_id_seq RESTART; ALTER SEQUENCE incidents_id_seq RESTART;
+  `);
 
 const registerUser = async (overrides = {}) => {
   const res = await request(app)
