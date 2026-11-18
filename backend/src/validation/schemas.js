@@ -142,6 +142,10 @@ const markRefundedSchema = z.object({
   note: z.string().trim().min(1).max(500).optional(),
 });
 
+const resolveIncidentSchema = z.object({
+  note: z.string({ error: () => 'note là bắt buộc' }).trim().min(1, 'note là bắt buộc').max(1000),
+});
+
 module.exports = {
   nameField,
   emailField,
@@ -162,4 +166,5 @@ module.exports = {
   forceCloseSchema,
   createPaymentSchema,
   markRefundedSchema,
+  resolveIncidentSchema,
 };

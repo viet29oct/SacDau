@@ -11,6 +11,7 @@ const bookingsRouter = require('./routes/bookings');
 const reportsRouter = require('./routes/reports');
 const sessionsRouter = require('./routes/sessions');
 const paymentsRouter = require('./routes/payments');
+const incidentsRouter = require('./routes/incidents');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { logger } = require('./logger');
 
@@ -32,6 +33,7 @@ app.use(bookingsRouter);
 app.use(reportsRouter);
 app.use(sessionsRouter);
 app.use(paymentsRouter);
+app.use(incidentsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
