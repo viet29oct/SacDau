@@ -30,13 +30,17 @@ Thumbs.db
 # Logs
 *.log
 
-# Data tạm / lớn
-analytics/data/*.csv
-!analytics/data/.gitkeep
-*.pbix.tmp
+# Mosquitto: file mat khau that (tao bang mosquitto_passwd, xem mosquitto/README.md)
+mosquitto/passwd
 
 # Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit
 .claude/
 
 # Ghi chu phien lam viec ca nhan - khong chia se len repo chung
 docs/NEXT_SESSION.md
+
+# GIS: file OSM tho (Geofabrik .pbf, hang tram MB) - moi nguoi tu tai lai theo gis/README
+gis/data/raw/
+
+# IoT: thu muc build PlatformIO (toolchain + cache, rat nang)
+iot/.pio/

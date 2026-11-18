@@ -1,10 +1,12 @@
 # Tech stack: Hệ thống quản lý mạng lưới trạm sạc xe điện
 
-Tài liệu này liệt kê công nghệ cần có cho dự án dùng chung 5 môn: IoT, Ngôn ngữ kịch bản, Web an toàn, GIS, Phân tích dữ liệu.
+Tài liệu này liệt kê công nghệ cần có cho dự án dùng chung 4 môn: IoT, Ngôn ngữ kịch bản, Web an toàn, GIS. *(Môn Phân tích & trực quan hoá dữ liệu không còn thuộc dự án — bỏ từ 2026-11-18.)*
 
 Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu môn, **[Nên có]** tăng chất lượng, **[Tùy chọn]** làm nếu còn thời gian.
 
 > **Cập nhật mô hình nghiệp vụ (2026-10-29):** bỏ marketplace (chủ trạm tự đăng ký), chuyển sang 1 công ty vận hành nhiều trạm — `admin` phân công `owner` quản lý. Không đổi công nghệ nền tảng, chỉ nâng WebSocket lên **[Bắt buộc]** (mục 2.2) và thêm hằng số đơn giá điện (mục 2.2b). Chi tiết nghiệp vụ: `docs/contracts.md`, `docs/FEATURES.md`.
+>
+> **Cập nhật luồng nghiệp vụ (2026-11-18):** cọc VNPay khi đặt chỗ, check-in bằng mã, broker MQTT có xác thực, các hằng số nghiệp vụ gom về `backend/src/config/rules.js`. Đặc tả: `docs/LUONG_NGHIEP_VU.md`.
 
 ---
 
@@ -19,7 +21,6 @@ Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu m�
 | Cơ sở dữ liệu | PostgreSQL + PostGIS | Dùng chung |
 | Frontend | HTML/JS (hoặc React) + Leaflet | Web an toàn, GIS |
 | GIS desktop | QGIS + PyQGIS | GIS |
-| Phân tích | Python (Pandas, scikit-learn), Power BI | Phân tích dữ liệu |
 | Công cụ chung | Git, Docker Compose, Postman | Cả nhóm |
 
 ---
@@ -35,7 +36,7 @@ Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu m�
 | Ngôn ngữ | C/C++ (Arduino framework) | Dùng Arduino IDE hoặc PlatformIO |
 | Thư viện | `WiFi`, `PubSubClient`, `ArduinoJson`, `DHT sensor library` | Kết nối WiFi, publish MQTT, đóng gói JSON |
 | Giao thức | MQTT | **Đã chốt 1 topic duy nhất**: `stations/{stationId}/status` — xem payload chính xác ở `docs/contracts.md` mục 1 |
-| Broker | Eclipse Mosquitto (chạy bằng Docker) | Có thể dùng broker công cộng (HiveMQ) khi demo Wokwi |
+| Broker | Eclipse Mosquitto (chạy bằng Docker) | **Bắt buộc có xác thực** (user/password + ACL theo trạm, không cho kết nối ẩn danh — xem `mosquitto/README.md`). Khi demo Wokwi trên cloud dùng HiveMQ Cloud bản free (TLS + user/password), **không** dùng broker công cộng không mật khẩu (ai cũng giả được bản tin) |
 | Công cụ kiểm tra | MQTT Explorer hoặc MQTTX | Xem message trực tiếp, hỗ trợ viết báo cáo |
 
 Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây là bản chốt cuối, không lặp lại ở đây để tránh 2 nơi ghi khác nhau).
@@ -64,7 +65,8 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Cổng thanh toán | VNPay **sandbox** | Không dùng tiền thật; cần tự đăng ký tài khoản sandbox tại `sandbox.vnpayment.vn` để lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET` |
 | Ký request/verify callback | `crypto` (built-in Node.js, HMAC-SHA512) | Không cần SDK bên thứ 3, tự viết helper `backend/src/services/vnpay.js` |
 | Luồng | Pay sau khi phiên sạc kết thúc (không pay lúc đặt chỗ) | Chi tiết luồng + endpoint: `docs/contracts.md` mục 4, `docs/FEATURES.md` mục 3 |
-| Đơn giá điện | Hằng số `UNIT_PRICE_PER_KWH` (biến môi trường, mặc định `3500` VNĐ/kWh) | Backend tự tính `cost = energy_kwh * UNIT_PRICE_PER_KWH` khi đóng phiên sạc *(thêm 2026-10-29, xem `docs/contracts.md` mục 1)* |
+| Đơn giá điện | Hằng số `UNIT_PRICE_PER_KWH` (biến môi trường, mặc định `3500` VNĐ/kWh) | Chụp vào phiên lúc mở (`charging_sessions.unit_price`); `cost = tiền điện + phí chiếm chỗ` *(xem `docs/contracts.md` mục 1)* |
+| Cọc & phí | `BOOKING_DEPOSIT_VND` (mặc định 20.000đ), phí chiếm chỗ 1.000đ/phút (trần 100.000đ) | Toàn bộ hằng số nghiệp vụ nằm ở `backend/src/config/rules.js` (đọc env, có mặc định) *(2026-11-18)* |
 
 ### 2.3 Bảo mật (môn Web an toàn) [Bắt buộc]
 
@@ -103,7 +105,7 @@ Danh sách endpoint đầy đủ (method, body, response) đã chốt ở **`doc
 | Dữ liệu chuỗi thời gian | Bảng PostgreSQL có chỉ mục theo thời gian | TimescaleDB là tùy chọn, chưa cần thiết với quy mô này |
 | Quản trị | pgAdmin hoặc DBeaver | Xem và truy vấn dữ liệu |
 
-Bảng đã migrate thật (Phase 1 + bổ sung thanh toán): `users`, `stations` (có `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`, `payments`.
+Bảng đã migrate thật (Phase 1 + bổ sung thanh toán + luồng nghiệp vụ 2026-11-18): `users`, `stations` (có `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`, `payments`, `incidents`. Extension `postgis` + `btree_gist` (exclusion constraint chống đặt trùng giờ).
 
 ### 2.5 Frontend [Bắt buộc]
 
@@ -126,20 +128,7 @@ Bảng đã migrate thật (Phase 1 + bổ sung thanh toán): `users`, `stations
 | Hệ tọa độ | WGS84 (EPSG:4326) lưu trữ; VN-2000 hoặc UTM 48N (EPSG:32648) khi đo khoảng cách | Cần nêu rõ trong báo cáo |
 | Phép phân tích | Buffer (vùng phục vụ), nearest neighbor, đếm điểm trong vùng, tìm khoảng trống phủ sóng | Ít nhất một phép phân tích thật sự |
 
-### 2.7 Phân tích dữ liệu (môn Phân tích và trực quan hóa dữ liệu) [Bắt buộc]
-
-| Thành phần | Công nghệ | Ghi chú |
-|---|---|---|
-| Ngôn ngữ | Python | Chạy trong Jupyter Notebook |
-| Xử lý dữ liệu | Pandas, NumPy | Làm sạch, xử lý dữ liệu thiếu, tổng hợp |
-| Khai phá dữ liệu | scikit-learn (K-Means, Decision Tree, Linear Regression), `mlxtend` (Apriori, FP-Growth) | Đúng theo đề cương môn |
-| Đánh giá | R², MSE, silhouette score | Báo cáo kết quả mô hình |
-| Vẽ biểu đồ | Matplotlib, Seaborn, Plotly | Biểu đồ trong notebook |
-| Dashboard | Power BI Desktop | KPI: doanh thu, tỷ lệ sử dụng trạm, giờ cao điểm |
-| Kết nối dữ liệu | Power BI đọc từ PostgreSQL hoặc file CSV xuất ra | Chọn một cách, ghi rõ trong báo cáo |
-| Sinh dữ liệu giả | Python (`Faker`, `numpy.random`) | Tạo dữ liệu phiên sạc có kiểm soát (xem mục 4) |
-
-### 2.8 Công cụ chung [Bắt buộc]
+### 2.7 Công cụ chung [Bắt buộc]
 
 | Công cụ | Mục đích |
 |---|---|
@@ -166,7 +155,6 @@ ev-charging-network/
 │   └── tests/
 ├── frontend/                 # giao diện web + Leaflet
 ├── gis/                      # dự án QGIS, PyQGIS scripts, dữ liệu OSM
-├── analytics/                # notebooks, script sinh dữ liệu, file .pbix
 ├── security/                 # báo cáo ZAP, kịch bản tấn công thử
 └── docs/                     # sơ đồ, báo cáo từng môn
 ```
@@ -188,7 +176,6 @@ ev-charging-network/
 | IoT | ESP32, Wokwi, MQTT, Mosquitto | IoT |
 | Backend và bảo mật | Node.js, Express, JWT, OWASP, ZAP | Ngôn ngữ kịch bản, Web an toàn |
 | Dữ liệu không gian | PostgreSQL, PostGIS, QGIS, PyQGIS, Leaflet | GIS |
-| Phân tích | Python, Pandas, scikit-learn, Power BI | Phân tích dữ liệu |
 
 Hai thứ cả nhóm cần chốt sớm: **lược đồ CSDL** và **tài liệu API**. Sau khi chốt, các mảng có thể làm gần như độc lập.
 
@@ -201,5 +188,5 @@ Hai thứ cả nhóm cần chốt sớm: **lược đồ CSDL** và **tài liệ
 3. Tạo lược đồ CSDL và nạp dữ liệu trạm mẫu.
 4. Dựng backend tối thiểu (đăng nhập + danh sách trạm).
 5. Dựng mạch ESP32 trên Wokwi gửi dữ liệu lên MQTT.
-6. Hoàn thiện frontend, bản đồ, rồi QGIS và phân tích.
+6. Hoàn thiện frontend, bản đồ, rồi QGIS.
 7. Cuối cùng: kiểm thử bảo mật và viết báo cáo từng môn.

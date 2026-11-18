@@ -70,6 +70,22 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
 - [ ] Review PR của `/telemetry` + MQTT subscriber (Người 1) khi mở PR — đúng state machine `charging_sessions` mới (mục 1 `contracts.md`: mở phiên có/không booking, đóng phiên tính `cost`) và có phát WebSocket (mục 1b).
 - [ ] **Chưa chốt:** ai viết `services/websocket.js` (phát event `port:update`/`session:update`) — nằm giữa ranh giới Người 1 (MQTT) và Người 2 — cần họp nhóm quyết định trước khi code.
 
+## Phase 5b — Luồng nghiệp vụ thực tế (IoT 1 chiều + quản lý trạm làm cầu nối)
+
+> Đặc tả: `docs/LUONG_NGHIEP_VU.md` (chốt 2026-11-18). Mỗi bước chạy `npm test` xanh rồi commit riêng.
+
+- [x] B0 — Tài liệu: `LUONG_NGHIEP_VU.md`, cập nhật `contracts.md`/`FEATURES.md`/`TECH_STACK.md`, bỏ môn Phân tích dữ liệu (xoá `analytics/`).
+- [ ] B1 — Migration `business-flows` (cọc, check-in, phiên trái phép, phí chiếm chỗ, incidents, exclusion constraint) + `src/config/rules.js`.
+- [ ] B2 — Tài khoản: register chỉ `driver`, admin tạo `owner` (`POST /users`), khoá/mở tài khoản, `authMiddleware` đọc `is_active`/`role` từ DB.
+- [ ] B3 — Trạm/cổng: ngừng hoạt động (soft), sửa dữ liệu gốc chỉ admin, `/stations/managed`, bảo trì cổng.
+- [ ] B4 — Đặt chỗ + cọc VNPay + check-in bằng mã (khoá sau 5 lần sai, đổi cổng, gắn phiên).
+- [ ] B5 — Engine phiên sạc (`sessionEngine.js`) + job định kỳ (hết hạn cọc, no-show, watchdog offline).
+- [ ] B6 — Phiên & thanh toán: quyết toán trừ cọc, phí chiếm chỗ, IPN so số tiền, cần hoàn, `/checkout`.
+- [ ] B7 — Sự cố + báo cáo theo phạm vi owner.
+- [ ] B8 — WebSocket có xác thực (`session:update`, `alert`).
+- [ ] B9 — Mosquitto có xác thực + ACL theo trạm.
+- [ ] Bàn giao IoT (sketch publish ngay khi đổi trạng thái, đăng nhập broker) và frontend (màn hình quản lý trạm) — cần chốt người làm.
+
 ## Phase 6 — Kiểm thử bảo mật cuối kỳ (phục vụ báo cáo môn Web an toàn)
 
 - [ ] Chạy OWASP ZAP quét toàn bộ API, lưu báo cáo vào `security/zap-report/`.
@@ -121,3 +137,4 @@ Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật
   - Đã commit (`70e27ef` — toàn bộ Phase 5 + fix IPN + model nghiệp vụ mới) và push lên `origin/Viet`.
 - 2026-10-30 — Sửa copy frontend cho khớp mô hình nghiệp vụ mới: đổi "Chủ trạm" → "Quản lý trạm" ở `RegisterPage.jsx` (dropdown role + chú thích "sẽ được admin phân công trạm sau khi đăng ký"), `Navbar.jsx` (`roleLabel`), `RoleSelectionSection.jsx` (card "Bạn là ai?" ở landing page), `StationDashboardPage.jsx` (text chào mừng) — chỉ sửa text/copy, không đổi route/logic/style (giữ nguyên màu navy/forest). `vite build` qua. Đã commit (`677dad1`) + push lên `origin/Viet`.
   - **Ghi nhận, chưa sửa (ngoài phạm vi frontend)**: backend hiện chưa có cách để admin tự tạo/promote tài khoản `owner` — vẫn dựa vào việc user tự đăng ký role `owner` ở `/auth/register` rồi admin gán `stations.owner_id` sau. Khớp với cách frontend đang làm nên không phải lỗi, nhưng nếu nhóm muốn admin toàn quyền tạo nhân viên thì cần thêm việc ở Phase sau.
+- 2026-11-18 — Rà soát toàn bộ luồng nghiệp vụ trước các kịch bản xấu thực tế (mạch chỉ gửi 1 chiều → quản lý trạm làm cầu nối). Chốt: bỏ khách vãng lai (bắt buộc đăng nhập), cọc VNPay khi đặt chỗ (giữ chỗ 5 phút), check-in bằng mã do quản lý nhập (không còn gán phiên theo khung giờ), phiên không check-in = phiên trái phép, phí chiếm chỗ khi xe đầy pin, chỉ thanh toán VNPay (owner không cầm tiền), hoàn cọc do admin xác nhận, broker MQTT có xác thực. Bỏ môn Phân tích & trực quan hoá dữ liệu khỏi dự án (xoá `analytics/`). Viết `docs/LUONG_NGHIEP_VU.md`, cập nhật `contracts.md`/`FEATURES.md`/`TECH_STACK.md`/`README.md` (bỏ link tới `NEXT_SESSION.md` vì file này bị gitignore). Code theo Phase 5b (B1–B9).

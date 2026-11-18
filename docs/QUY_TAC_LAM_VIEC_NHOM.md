@@ -38,7 +38,9 @@ Chia theo **thư mục sở hữu**, không chia theo "ai giỏi gì" — vì ch
 |---|---|---|---|
 | **Người 1** | IoT & dữ liệu thiết bị | `iot/` (ESP32, Wokwi), `backend/src/services/mqttSubscriber.js`, `backend/src/routes/telemetry.js` | IoT |
 | **Người 2** | Backend core & Bảo mật | `backend/src/routes/auth.js`, `routes/users.js`, `routes/bookings.js`, `routes/reports.js`, `middleware/` (auth, rbac, validate, security), `security/` | Ngôn ngữ kịch bản, Web an toàn |
-| **Người 3** | Không gian & Phân tích | `backend/src/routes/stations.js`, `gis/`, `analytics/`, `frontend/src/` (bản đồ Leaflet + biểu đồ) | GIS, Phân tích dữ liệu |
+| **Người 3** | Không gian | `backend/src/routes/stations.js`, `gis/`, `frontend/src/` (bản đồ Leaflet + biểu đồ) | GIS |
+
+> Môn Phân tích & trực quan hoá dữ liệu không còn thuộc dự án (bỏ từ 2026-11-18) — thư mục `analytics/` đã xoá.
 
 Quy tắc đi kèm:
 
@@ -78,9 +80,9 @@ Lý do: file config/DB bị nhiều người sửa cùng lúc là nguồn confli
 
 - Trong code Node.js: luôn dùng `path.join(__dirname, ...)`, **không** viết đường dẫn tuyệt đối kiểu `D:\project k7\...` hoặc `/home/an/...` trong code — máy người khác không có đường dẫn đó.
 - Import module trong JS/TS: dùng đường dẫn tương đối từ file hiện tại (`../services/mqttSubscriber`), không hard-code path tuyệt đối.
-- File tĩnh / dữ liệu mẫu (GeoJSON, CSV, ảnh...): để trong thư mục con cố định (`gis/data/`, `analytics/data/`) và luôn tham chiếu tương đối tới thư mục đó — không ai để đường dẫn kiểu `C:\Users\<tên riêng>\...`.
+- File tĩnh / dữ liệu mẫu (GeoJSON, CSV, ảnh...): để trong thư mục con cố định (`gis/data/`) và luôn tham chiếu tương đối tới thư mục đó — không ai để đường dẫn kiểu `C:\Users\<tên riêng>\...`.
 - Frontend gọi API: không hard-code `http://localhost:3000`. Để trong biến môi trường (`VITE_API_URL`), đọc qua `import.meta.env.VITE_API_URL`. Đổi port/host không cần sửa code.
-- Python (GIS/analytics): dùng `Path(__file__).parent / "data" / "ten_file.csv"` (module `pathlib`), không hard-code path máy cá nhân.
+- Python (GIS): dùng `Path(__file__).parent / "data" / "ten_file.csv"` (module `pathlib`), không hard-code path máy cá nhân.
 
 ---
 
@@ -150,7 +152,11 @@ Không ai được ngồi chờ người khác xong mới code. Dùng giả lậ
 
 ```js
 const mqtt = require('mqtt');
-const client = mqtt.connect('mqtt://localhost:1883');
+// Broker bắt buộc đăng nhập (2026-11-18) — dùng tài khoản của trạm, xem mosquitto/README.md
+const client = mqtt.connect('mqtt://localhost:1883', {
+  username: 'station_ST01',
+  password: process.env.MQTT_STATION_PASSWORD,
+});
 
 setInterval(() => {
   const payload = {
@@ -175,10 +181,6 @@ Chạy `node iot/mock/mockPublisher.js` → backend nhận dữ liệu y như th
 - Hoặc dùng `msw` (Mock Service Worker) nếu muốn mock ngay trong React.
 - Khi backend thật xong, chỉ đổi `VITE_API_URL` từ mock sang thật — không sửa code gọi API.
 
-**c) Giả lập dữ liệu lớn cho phân tích** (Người 3 làm phân tích dữ liệu không cần chờ có dữ liệu thật):
-
-- Dùng `Faker`/`numpy.random` sinh dữ liệu phiên sạc theo đúng schema `charging_sessions` đã chốt (xem `TECH_STACK.md` mục 4).
-
 ---
 
 ## 7. Dùng Linter/Formatter để tránh "conflict giả"
@@ -195,7 +197,7 @@ Chạy `node iot/mock/mockPublisher.js` → backend nhận dữ liệu y như th
 }
 ```
 
-- Python (GIS/analytics): dùng `black` (format) + `flake8` (lint), chạy trước khi commit notebook/script.
+- Python (GIS): dùng `black` (format) + `flake8` (lint), chạy trước khi commit script.
 - Bật format-on-save trong VS Code, cả 3 người cùng dùng chung extension (Prettier, ESLint, Python) để không ai gõ ra style khác nhau ngay từ đầu.
 - **Quy tắc vàng:** không bao giờ "format lại toàn bộ file" chỉ vì tiện tay — việc này đổi hàng trăm dòng không liên quan, làm git diff rối và gây conflict với người đang sửa cùng file. Chỉ format phần mình vừa sửa (lint-staged ở trên đã tự làm đúng việc này).
 

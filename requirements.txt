@@ -1,3 +1,2 @@
-# Pin version cứng khi thêm, ví dụ: pandas==2.2.2
+# Pin version cứng khi thêm, ví dụ: shapely==2.0.6
 # Dùng cho gis/scripts (PyQGIS chạy trong QGIS có Python riêng, không cần ở đây)
-# và analytics/ (Pandas, scikit-learn, Faker...)
