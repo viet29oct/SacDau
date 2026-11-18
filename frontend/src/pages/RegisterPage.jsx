@@ -9,7 +9,8 @@ import Card from '../components/ui/Card';
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'driver' });
+  // Tự đăng ký luôn là tài xế; tài khoản quản lý trạm do admin cấp (docs/LUONG_NGHIEP_VU.md mục 2)
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,25 +57,9 @@ export default function RegisterPage() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
-            <div className="flex flex-col gap-1">
-              <label htmlFor="role" className="text-sm font-medium text-slate-700">
-                Vai trò
-              </label>
-              <select
-                id="role"
-                className="rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-forest focus:outline-none focus:ring-1 focus:ring-forest"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="driver">Tài xế</option>
-                <option value="owner">Quản lý trạm</option>
-              </select>
-              {form.role === 'owner' && (
-                <p className="text-xs text-slate-500">
-                  Tài khoản quản lý trạm sẽ được admin phân công trạm cụ thể sau khi đăng ký.
-                </p>
-              )}
-            </div>
+            <p className="text-xs text-slate-500">
+              Đăng ký tài khoản tài xế. Nhân viên quản lý trạm dùng tài khoản do công ty cấp.
+            </p>
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Đang đăng ký...' : 'Đăng ký'}

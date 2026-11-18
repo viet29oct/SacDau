@@ -17,11 +17,26 @@ const nameField = wrapParser(parseName);
 const emailField = wrapParser(parseEmail);
 const passwordField = wrapParser(parsePassword);
 
+// Tự đăng ký luôn là tài xế (2026-11-18): quản lý trạm là nhân viên, do admin tạo qua POST /users.
+// Giữ field role tuỳ chọn để frontend cũ gửi role='driver' vẫn chạy.
 const registerSchema = z.object({
   name: nameField,
   email: emailField,
   password: passwordField,
+  role: z
+    .literal('driver', { error: () => 'Chỉ đăng ký được tài khoản tài xế; tài khoản quản lý trạm do admin cấp' })
+    .optional(),
+});
+
+const createUserSchema = z.object({
+  name: nameField,
+  email: emailField,
+  password: passwordField,
   role: z.enum(['driver', 'owner'], { error: () => 'role phải là driver hoặc owner' }),
+});
+
+const userStatusSchema = z.object({
+  isActive: z.boolean({ error: () => 'isActive phải là true/false' }),
 });
 
 // Login không siết định dạng email ở đây -> sai email/sai password phải trả cùng 1 lỗi 401
@@ -109,6 +124,8 @@ module.exports = {
   emailField,
   passwordField,
   registerSchema,
+  createUserSchema,
+  userStatusSchema,
   loginSchema,
   refreshSchema,
   updateUserSchema,

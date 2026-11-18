@@ -2,7 +2,7 @@ const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const app = require('../src/app');
 const pool = require('../src/db');
-const { registerUser, resetDb } = require('./helpers');
+const { createAdmin, createUser, registerUser, resetDb } = require('./helpers');
 
 beforeEach(resetDb);
 afterAll(() => pool.end());
@@ -15,7 +15,7 @@ describe('POST /auth/register', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.user).toEqual({ id: 1, name: 'Tài xế A', email: 'a@example.com', role: 'driver' });
+    expect(res.body.data.user).toEqual({ id: 1, name: 'Tài xế A', email: 'a@example.com', role: 'driver', isActive: true });
     expect(res.body.data.accessToken).toEqual(expect.any(String));
     expect(res.body.data.refreshToken).toEqual(expect.any(String));
     expect(JSON.stringify(res.body)).not.toMatch(/password/i);
@@ -24,19 +24,29 @@ describe('POST /auth/register', () => {
     expect(rows[0].password_hash).not.toBe('matkhau123');
   });
 
-  it('không cho tự đăng ký role admin', async () => {
+  it.each(['admin', 'owner'])('không cho tự đăng ký role %s (owner do admin cấp)', async (role) => {
     const res = await request(app)
       .post('/auth/register')
-      .send({ name: 'Hacker', email: 'h@example.com', password: 'matkhau123', role: 'admin' });
+      .send({ name: 'Hacker', email: 'h@example.com', password: 'matkhau123', role });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    const { rows } = await pool.query('SELECT 1 FROM users');
+    expect(rows).toHaveLength(0);
+  });
+
+  it('không gửi role -> luôn tạo tài xế', async () => {
+    const res = await request(app)
+      .post('/auth/register')
+      .send({ name: 'C', email: 'c@example.com', password: 'matkhau123' });
+    expect(res.status).toBe(201);
+    expect(res.body.data.user.role).toBe('driver');
   });
 
   it('trùng email -> 409 EMAIL_ALREADY_EXISTS', async () => {
     await registerUser();
     const res = await request(app)
       .post('/auth/register')
-      .send({ name: 'B', email: 'a@example.com', password: 'matkhau123', role: 'owner' });
+      .send({ name: 'B', email: 'a@example.com', password: 'matkhau123' });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('EMAIL_ALREADY_EXISTS');
   });
@@ -122,7 +132,7 @@ describe('Route cần token', () => {
     const { accessToken } = await registerUser();
     const res = await request(app).get('/users/me').set('Authorization', `Bearer ${accessToken}`);
     expect(res.status).toBe(200);
-    expect(res.body.data).toEqual({ id: 1, name: 'Tài xế A', email: 'a@example.com', role: 'driver' });
+    expect(res.body.data).toEqual({ id: 1, name: 'Tài xế A', email: 'a@example.com', role: 'driver', isActive: true });
   });
 });
 
@@ -146,5 +156,32 @@ describe('POST /auth/refresh', () => {
     await resetDb();
     const res = await request(app).post('/auth/refresh').send({ refreshToken });
     expect(res.status).toBe(401);
+  });
+});
+
+describe('Tài khoản bị khoá / đổi quyền có hiệu lực ngay', () => {
+  it('đúng mật khẩu nhưng tài khoản khoá -> 403 ACCOUNT_DISABLED; sai mật khẩu vẫn 401 như thường', async () => {
+    await createUser({ email: 'k@example.com', isActive: false });
+    const right = await request(app).post('/auth/login').send({ email: 'k@example.com', password: 'matkhau123' });
+    expect(right.status).toBe(403);
+    expect(right.body.error.code).toBe('ACCOUNT_DISABLED');
+    const wrong = await request(app).post('/auth/login').send({ email: 'k@example.com', password: 'saimatkhau' });
+    expect(wrong.status).toBe(401);
+  });
+
+  it('access token đang còn hạn bị chặn ngay khi tài khoản bị khoá; refresh cũng bị chặn', async () => {
+    const { user, accessToken, refreshToken } = await registerUser();
+    await pool.query('UPDATE users SET is_active = false WHERE id = $1', [user.id]);
+    const me = await request(app).get('/users/me').set('Authorization', `Bearer ${accessToken}`);
+    expect(me.status).toBe(401);
+    const refreshed = await request(app).post('/auth/refresh').send({ refreshToken });
+    expect(refreshed.status).toBe(401);
+  });
+
+  it('role lấy từ DB, không tin role trong token: admin bị hạ quyền -> 403 ngay', async () => {
+    const admin = await createAdmin();
+    await pool.query("UPDATE users SET role = 'driver' WHERE id = $1", [admin.user.id]);
+    const res = await request(app).get('/users').set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(res.status).toBe(403);
   });
 });
