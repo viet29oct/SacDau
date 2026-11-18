@@ -89,6 +89,13 @@ const assignOwnerSchema = z.object({
   ownerId: z.number({ error: () => 'ownerId là bắt buộc' }).int().positive(),
 });
 
+const portServiceSchema = z.object({
+  serviceStatus: z.enum(['in_service', 'maintenance'], {
+    error: () => 'serviceStatus phải là in_service hoặc maintenance',
+  }),
+  reason: z.string().trim().max(500).optional(),
+});
+
 const isoDateTimeField = (label) =>
   z.string({ error: () => `${label} phải là chuỗi ISO 8601` }).transform((value, ctx) => {
     const date = new Date(value);
@@ -132,6 +139,7 @@ module.exports = {
   createStationSchema,
   updateStationSchema,
   assignOwnerSchema,
+  portServiceSchema,
   createBookingSchema,
   createPaymentSchema,
 };

@@ -280,7 +280,7 @@ Access token 15 phút, refresh token 7 ngày. Mỗi request có token, backend �
 |---|---|---|---|
 | GET | `/stations` | `?near=lat,lng&radiusKm=` (tuỳ chọn) — public, chỉ trạm active | `Station[]` |
 | GET | `/stations/managed` *(owner/admin)* | — owner: trạm được phân công; admin: tất cả (kể cả ngừng hoạt động) | `Station[]` |
-| GET | `/stations/:id` | public (trạm ngừng hoạt động chỉ admin xem được) | `Station` |
+| GET | `/stations/:id` | public — trạm đã ngừng hoạt động trả `404 STATION_NOT_FOUND` (admin xem qua `/stations/managed`) | `Station` |
 | POST | `/stations` *(admin)* | `{ name, code, lat, lng, portsCount? }` | `Station` |
 | PATCH | `/stations/:id` *(admin)* | `{ name?, lat?, lng? }` | `Station` |
 | DELETE | `/stations/:id` *(admin)* | — ngừng hoạt động (soft), `409 STATION_IN_USE` nếu còn phiên mở/booking sắp tới | `Station` |
