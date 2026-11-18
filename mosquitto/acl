@@ -1,0 +1,9 @@
+# ACL Mosquitto — có file ACL thì mặc định CẤM mọi topic, chỉ cho những gì khai báo dưới đây.
+
+# Backend: chỉ đọc bản tin trạng thái của mọi trạm, không publish gì (IoT -> server 1 chiều)
+user sacdau_backend
+topic read stations/+/status
+
+# Mỗi trạm đăng nhập bằng username = mã trạm (vd ST01) và CHỈ được publish vào topic của chính mình.
+# %u = username -> thêm trạm mới chỉ cần thêm tài khoản vào passwd, không sửa file này.
+pattern write stations/%u/status

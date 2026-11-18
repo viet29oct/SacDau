@@ -174,7 +174,7 @@ Hoàn tiền:   (không) | due ─admin xác nhận─► refunded
 ## 13. Chạy demo
 
 - **IPN của VNPay**: VNPay không gọi được `localhost`. Khi demo cần mở tunnel (vd `cloudflared tunnel --url http://localhost:3000`), rồi khai URL `https://<tunnel>/payments/vnpay-ipn` ở mục cấu hình IPN trên cổng merchant sandbox. Không có tunnel thì tài xế trả cọc xong booking vẫn bị huỷ sau 5 phút (tiền sẽ vào diện cần hoàn khi IPN đến sau).
-- **MQTT có xác thực**: Mosquitto local bật user/password + ACL theo trạm (xem `mosquitto/README.md`). Wokwi chạy trên cloud không vào được broker trên máy; khi demo Wokwi có thể dùng HiveMQ Cloud bản free (TLS + user/password). Lưu ý: cần kiểm tra bản free có phân quyền theo topic hay không — nếu không, "mỗi trạm chỉ publish topic của mình" chỉ đúng với Mosquitto local.
+- **MQTT có xác thực**: Mosquitto local bật user/password + ACL theo trạm (username = mã trạm, xem `mosquitto/README.md`). Wokwi chạy trên cloud không vào được broker trên máy; khi demo Wokwi dùng HiveMQ Cloud bản Serverless (free): TLS + mỗi credential 1 permission với 1 topic filter — trạm `ST01` chỉ *Publish* `stations/ST01/status`, backend chỉ *Subscribe* `stations/+/status`. Kiểm tra lại trên giao diện HiveMQ lúc tạo vì chính sách gói free có thể đổi.
 
 ## 14. Checklist bàn giao
 

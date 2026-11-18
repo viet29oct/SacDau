@@ -154,7 +154,7 @@ Không ai được ngồi chờ người khác xong mới code. Dùng giả lậ
 const mqtt = require('mqtt');
 // Broker bắt buộc đăng nhập (2026-11-18) — dùng tài khoản của trạm, xem mosquitto/README.md
 const client = mqtt.connect('mqtt://localhost:1883', {
-  username: 'station_ST01',
+  username: 'ST01', // username = mã trạm
   password: process.env.MQTT_STATION_PASSWORD,
 });
 

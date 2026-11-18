@@ -32,6 +32,7 @@ Thumbs.db
 
 # Mosquitto: file mat khau that (tao bang mosquitto_passwd, xem mosquitto/README.md)
 mosquitto/passwd
+mosquitto/*.local
 
 # Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit
 .claude/

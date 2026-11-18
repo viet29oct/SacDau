@@ -65,7 +65,7 @@ Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `statio
 
 **Tần suất:** publish **ngay khi đổi trạng thái**, và định kỳ (heartbeat) ≤ 10 giây/lần. Quá 60 giây không có bản tin → backend coi cổng là offline.
 
-**Xác thực broker:** mỗi trạm 1 tài khoản MQTT (`station_<CODE>`), chỉ được publish vào `stations/<CODE>/status` (ACL ở Mosquitto). Backend dùng tài khoản riêng, chỉ subscribe `stations/+/status`. Không cho kết nối ẩn danh.
+**Xác thực broker:** mỗi trạm 1 tài khoản MQTT, **username = mã trạm** (vd `ST01`), chỉ được publish vào `stations/<mã trạm>/status` (ACL `pattern write stations/%u/status` ở Mosquitto). Backend dùng tài khoản `sacdau_backend`, chỉ subscribe `stations/+/status`. Không cho kết nối ẩn danh. Cách tạo tài khoản: `mosquitto/README.md`.
 
 **Quy tắc xử lý trên backend** (chi tiết: `docs/LUONG_NGHIEP_VU.md` mục 8):
 
