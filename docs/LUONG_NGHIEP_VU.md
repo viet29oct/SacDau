@@ -178,12 +178,16 @@ Hoàn tiền:   (không) | due ─admin xác nhận─► refunded
 
 ## 14. Checklist bàn giao
 
-**IoT (Người 1) — `iot/sketch.ino`**
-- [ ] Đăng nhập broker bằng user/password của trạm (TLS `WiFiClientSecure` cổng 8883 khi dùng HiveMQ Cloud).
-- [ ] Publish **ngay khi đổi trạng thái** (hiện chỉ publish 5 giây/lần → cắm rồi rút nhanh có thể mất cả phiên), giữ heartbeat ≤ 10 giây.
-- [ ] Giữ `charging` khi pin đầy (công suất 0), chỉ gửi `idle` khi rút súng.
-- [ ] Chưa đồng bộ được NTP thì gửi `timestamp: null`.
-- [ ] `energyKwh` chỉ tăng trong 1 phiên, về 0 khi bắt đầu phiên mới.
+**IoT (Người 1) — `iot/sketch.ino`** *(đã sửa 2026-11-19, cần Người 1 xem lại)*
+- [x] Đăng nhập broker bằng user/password của trạm, TLS `WiFiClientSecure` cổng 8883 (chưa kiểm tra chứng chỉ — `setInsecure()`, đủ cho demo).
+- [ ] **Điền `MQTT_HOST`/`MQTT_PASS` thật** ở đầu sketch sau khi tạo cluster HiveMQ Cloud.
+- [x] Publish **ngay khi đổi trạng thái** + heartbeat 5 giây; mất kết nối thì giữ lại, gửi ngay khi kết nối lại.
+- [x] Chống dội nút bấm (30 ms) — tránh 1 lần bấm thành nhiều lần cắm/rút.
+- [x] Giữ `charging` khi pin đầy (công suất 0), chỉ gửi `idle` khi rút súng.
+- [x] Chưa đồng bộ được NTP thì gửi `timestamp: null`.
+- [x] `energyKwh` chỉ tăng trong 1 phiên, về 0 khi bắt đầu phiên mới.
+- [x] Mất WiFi/MQTT tự kết nối lại, không chặn vòng lặp (nút bấm vẫn hoạt động).
+- [ ] (Tuỳ chọn) Thêm biến trở thứ 2 để giả lập riêng từng cổng đầy pin.
 
 **Frontend**
 - [ ] Tài xế: bản đồ trạm, chi tiết trạm, đặt chỗ/đặt ngay → chuyển VNPay + đếm ngược 5 phút, danh sách booking + mã check-in, phiên đang sạc real-time + cảnh báo phí chiếm chỗ, trả phần còn lại, trang `/payment-result`.
