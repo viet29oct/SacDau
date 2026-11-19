@@ -1,6 +1,6 @@
 # Luồng nghiệp vụ — SacDau
 
-File này là **đặc tả luồng nghiệp vụ đã chốt** (2026-11-18): ai làm gì, theo thứ tự nào, hệ thống chặn những kịch bản xấu nào và bằng cách nào. Field/endpoint/error code chính xác nằm ở `docs/contracts.md`; phạm vi tính năng ở `docs/FEATURES.md`. Muốn đổi luồng nào ở đây → báo nhóm, sửa file này trước rồi mới sửa code.
+File này là **đặc tả luồng nghiệp vụ đã chốt**: ai làm gì, theo thứ tự nào, hệ thống chặn những kịch bản xấu nào và bằng cách nào. Field/endpoint/error code chính xác nằm ở `docs/contracts.md`; phạm vi tính năng ở `docs/FEATURES.md`. Muốn đổi luồng nào ở đây → báo nhóm, sửa file này trước rồi mới sửa code.
 
 ---
 
@@ -171,28 +171,6 @@ Hoàn tiền:   (không) | due ─admin xác nhận─► refunded
 - Hệ thống **không tự phát hiện lỗi phía trạm để hoàn cọc**. Cổng hỏng mà quản lý không chủ động huỷ booking thì tài xế vẫn bị tính no-show/phí tối thiểu; khiếu nại xử lý ngoài hệ thống.
 - Không dừng sạc từ xa; không hoàn tiền tự động qua API VNPay (admin hoàn tay rồi xác nhận).
 
-## 13. Chạy demo
+---
 
-- **IPN của VNPay**: VNPay không gọi được `localhost`. Khi demo cần mở tunnel (vd `cloudflared tunnel --url http://localhost:3000`), rồi khai URL `https://<tunnel>/payments/vnpay-ipn` ở mục cấu hình IPN trên cổng merchant sandbox. Không có tunnel thì tài xế trả cọc xong booking vẫn bị huỷ sau 5 phút (tiền sẽ vào diện cần hoàn khi IPN đến sau).
-- **MQTT có xác thực**: Mosquitto local bật user/password + ACL theo trạm (username = mã trạm, xem `mosquitto/README.md`). Demo Wokwi: chạy **Wokwi trong VS Code** và cho mạch nối thẳng Mosquitto trên máy qua `host.wokwi.internal:1883` (gateway có sẵn trong extension) — giữ nguyên xác thực + ACL, không cần broker cloud (đã chạy thật 2026-11-19). Chỉ khi chạy trên wokwi.com mới cần broker cloud có TLS + đăng nhập (vd EMQX Cloud Serverless); HiveMQ Cloud Serverless free đã ngừng nhận đăng ký mới. Cấu hình mạch nằm ở `iot/secrets.h` (không commit, mẫu `iot/secrets.example.h`).
-
-## 14. Checklist bàn giao
-
-**IoT (Người 1) — `iot/sketch.ino`** *(đã sửa 2026-11-19, cần Người 1 xem lại)*
-- [x] Đăng nhập broker bằng user/password của trạm; bật/tắt TLS bằng `MQTT_USE_TLS` (TLS: `WiFiClientSecure` cổng 8883, chưa kiểm tra chứng chỉ — `setInsecure()`, đủ cho demo).
-- [x] Cấu hình bí mật tách ra `iot/secrets.h` (gitignore), mẫu `iot/secrets.example.h`.
-- [x] Đã chạy thật mạch ↔ server (2026-11-19, Wokwi VS Code → `host.wokwi.internal` → Mosquitto): cắm khi chưa check-in → phiên trái phép; giữ nút 2s / quá nhiệt → `fault`, đóng phiên `device_fault`, mở incident; reset khi hết nóng → `idle`.
-- [x] Publish **ngay khi đổi trạng thái** + heartbeat 5 giây; mất kết nối thì giữ lại, gửi ngay khi kết nối lại.
-- [x] Chống dội nút bấm (30 ms) — tránh 1 lần bấm thành nhiều lần cắm/rút.
-- [x] Giữ `charging` khi pin đầy (công suất 0), chỉ gửi `idle` khi rút súng.
-- [x] Chưa đồng bộ được NTP thì gửi `timestamp: null`.
-- [x] `energyKwh` chỉ tăng trong 1 phiên, về 0 khi bắt đầu phiên mới.
-- [x] Mất WiFi/MQTT tự kết nối lại, không chặn vòng lặp (nút bấm vẫn hoạt động).
-- [ ] (Tuỳ chọn) Thêm biến trở thứ 2 để giả lập riêng từng cổng đầy pin.
-
-**Frontend**
-- [ ] Tài xế: bản đồ trạm, chi tiết trạm, đặt chỗ/đặt ngay → chuyển VNPay + đếm ngược 5 phút, danh sách booking + mã check-in, phiên đang sạc real-time + cảnh báo phí chiếm chỗ, trả phần còn lại, trang `/payment-result`.
-- [ ] Quản lý trạm: booking hôm nay + nhập mã check-in (đổi cổng, gắn phiên), cảnh báo (phiên trái phép, xe đầy, sự cố), đóng tay phiên, bảo trì cổng, danh sách sự cố.
-- [ ] Admin: tạo/khoá tài khoản nhân viên, quản lý trạm + phân công, danh sách cần hoàn, báo cáo.
-
-⚠️ Cần chốt **ai làm màn hình quản lý trạm** — thiếu màn hình này thì luồng check-in không demo được.
+Cách chạy demo (tunnel VNPay, mạch Wokwi): `README.md` và `mosquitto/README.md`. Việc còn lại để luồng này chạy được trên giao diện: `ROADMAP.md`.

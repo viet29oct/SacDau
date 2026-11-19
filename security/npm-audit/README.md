@@ -1,7 +1,7 @@
 # npm audit — nhật ký
 
 Chạy định kỳ (Phase 4/6), lưu kết quả `npm audit` (text + json) kèm ngày tháng. Không tự `npm audit fix --force`
-nếu fix kéo theo breaking change cho gói lõi — phải báo nhóm trước (xem `docs/QUY_TAC_LAM_VIEC_NHOM.md` mục 1).
+nếu fix kéo theo breaking change cho gói lõi — phải báo nhóm trước (xem `docs/TECH_STACK.md` mục 1).
 
 ## 2026-10-14
 

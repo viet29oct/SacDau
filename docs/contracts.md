@@ -2,17 +2,7 @@
 
 Đây là **hợp đồng bắt buộc** giữa IoT, Backend, Frontend, GIS. Field đã chốt ở đây **không tự đổi tên/kiểu dữ liệu** — cần đổi gì thì báo nhóm, sửa ở file này trước, rồi cả 3 người sửa code theo, không sửa code trước rồi mới báo.
 
-Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `stations`, `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`, `payments`, `incidents`).
-
-> **Cập nhật mô hình nghiệp vụ (2026-10-29):** 1 công ty vận hành nhiều trạm; `admin` tạo trạm và phân công `owner` (nhân viên) quản lý.
->
-> **Cập nhật luồng nghiệp vụ thực tế (2026-11-18):** đặc tả đầy đủ ở `docs/LUONG_NGHIEP_VU.md`. Tóm tắt các thay đổi hành vi so với bản trước:
-> - Bỏ khách vãng lai: mọi khách phải có tài khoản; phiên không check-in = **phiên trái phép** (không gán nợ cho ai).
-> - Đặt chỗ phải **trả cọc VNPay ngay** (`pending` 5 phút → `confirmed`), phiên sạc chỉ gắn với booking qua **check-in bằng mã** do quản lý trạm nhập — không còn gán theo khung giờ.
-> - Chỉ thanh toán qua VNPay; phần còn lại sau khi trừ cọc trả sau phiên; phí chiếm chỗ khi xe đầy pin mà chưa rút súng.
-> - `POST /auth/register` chỉ nhận `driver`; `owner` do admin tạo qua `POST /users`.
-> - `PATCH /stations/:id` chỉ admin; `DELETE /stations/:id` = ngừng hoạt động (soft); `/reports/*` mở cho owner theo phạm vi trạm.
-> - WebSocket: kênh công khai chỉ còn `port:update`; `session:update` và `alert` cần xác thực.
+Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `stations`, `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs`, `payments`, `incidents`). Lý do đằng sau từng luật (cọc, check-in, phiên trái phép...): `docs/LUONG_NGHIEP_VU.md`.
 
 ---
 
@@ -76,7 +66,7 @@ Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `statio
 5. `idle`/`fault` và có phiên mở → đóng phiên: `energy_kwh = max(cũ, payload)`, `cost = energyCost + idleFee`, trừ cọc, ghi `end_reason`. `fault` không tính phí chiếm chỗ và mở `incident`.
 6. Sau mỗi bước, phát sự kiện WebSocket (mục 1b).
 
-**Mock khi chưa có ESP32 thật:** `mosquitto_pub` hoặc `iot/mock/mockPublisher.js` với tài khoản MQTT của trạm, publish đúng payload trên.
+**Mock khi chưa có ESP32 thật:** `mosquitto_pub` với tài khoản MQTT của trạm (lệnh mẫu ở `mosquitto/README.md`), hoặc `npm run e2e:demo` trong `backend/`.
 
 ---
 
@@ -122,24 +112,24 @@ Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `statio
 | `VALIDATION_ERROR` | 400 | Body/query không đúng định dạng hoặc vi phạm luật thời gian (thời lượng, giờ phục vụ...) |
 | `UNAUTHORIZED` | 401 | Thiếu token, token sai/hết hạn, hoặc tài khoản đã bị khoá/xoá |
 | `FORBIDDEN` | 403 | Có token nhưng không đủ quyền (RBAC) hoặc không sở hữu tài nguyên (chống IDOR) |
-| `ACCOUNT_DISABLED` | 403 | Đăng nhập đúng mật khẩu nhưng tài khoản đã bị admin khoá *(2026-11-18)* |
+| `ACCOUNT_DISABLED` | 403 | Đăng nhập đúng mật khẩu nhưng tài khoản đã bị admin khoá |
 | `NOT_FOUND` | 404 | ID không tồn tại (generic) |
 | `STATION_NOT_FOUND` | 404 | Riêng cho `/stations/:id` |
 | `PAYMENT_NOT_FOUND` | 404 | Riêng cho `/payments/:id` |
 | `EMAIL_ALREADY_EXISTS` | 409 | Đăng ký hoặc đổi email trùng với tài khoản khác |
 | `STATION_CODE_ALREADY_EXISTS` | 409 | `POST /stations` với `code` đã tồn tại |
-| `STATION_NOT_OPERATIONAL` | 409 | Đặt chỗ ở trạm đã ngừng hoạt động hoặc chưa có quản lý *(2026-11-18)* |
-| `STATION_IN_USE` | 409 | Ngừng hoạt động trạm khi còn phiên đang mở hoặc booking sắp tới *(2026-11-18)* |
-| `OWNER_HAS_STATIONS` | 409 | Khoá tài khoản quản lý đang được phân công trạm *(2026-11-18)* |
-| `PORT_UNAVAILABLE` | 409 | Đặt chỗ vào cổng đang bảo trì, hoặc cổng đang `fault`/offline mà booking bắt đầu trong vòng 1 giờ *(sửa mô tả 2026-11-18)* |
+| `STATION_NOT_OPERATIONAL` | 409 | Đặt chỗ ở trạm đã ngừng hoạt động hoặc chưa có quản lý |
+| `STATION_IN_USE` | 409 | Ngừng hoạt động trạm khi còn phiên đang mở hoặc booking sắp tới |
+| `OWNER_HAS_STATIONS` | 409 | Khoá tài khoản quản lý đang được phân công trạm |
+| `PORT_UNAVAILABLE` | 409 | Đặt chỗ vào cổng đang bảo trì, hoặc cổng đang `fault`/offline mà booking bắt đầu trong vòng 1 giờ |
 | `BOOKING_CONFLICT` | 409 | Trùng khung giờ với booking khác cùng cổng, hoặc tài xế đã có booking khác chồng giờ |
-| `BOOKING_LIMIT_REACHED` | 409 | Vượt giới hạn: >1 booking chờ cọc, >2 booking đã cọc, hoặc ≥3 lần giữ chỗ hết hạn trong 24h *(2026-11-18)* |
-| `UNPAID_SESSION_EXISTS` | 409 | Đặt chỗ khi còn phiên sạc chưa trả phần còn lại *(2026-11-18)* |
+| `BOOKING_LIMIT_REACHED` | 409 | Vượt giới hạn: >1 booking chờ cọc, >2 booking đã cọc, hoặc ≥3 lần giữ chỗ hết hạn trong 24h |
+| `UNPAID_SESSION_EXISTS` | 409 | Đặt chỗ khi còn phiên sạc chưa trả phần còn lại |
 | `BOOKING_CANCEL_NOT_ALLOWED` | 400 | Huỷ booking đã kết thúc/đã huỷ, đã check-in, hoặc tài xế huỷ khi đã quá giờ bắt đầu |
-| `CHECKIN_NOT_ALLOWED` | 400 | Check-in ngoài cửa sổ thời gian hoặc booking sai trạng thái *(2026-11-18)* |
-| `INVALID_CHECKIN_CODE` | 400 | Sai mã check-in *(2026-11-18)* |
-| `SESSION_ACTION_NOT_ALLOWED` | 409 | Thao tác lên phiên không hợp lệ ở trạng thái hiện tại (phiên đã đóng/đã có chủ, chưa offline, số kWh ngoài giới hạn...) *(2026-11-18)* |
-| `PAYMENT_IN_PROGRESS` | 409 | Tạo thanh toán khi đã có giao dịch `pending` chưa hết hạn *(2026-11-18)* |
+| `CHECKIN_NOT_ALLOWED` | 400 | Check-in ngoài cửa sổ thời gian hoặc booking sai trạng thái |
+| `INVALID_CHECKIN_CODE` | 400 | Sai mã check-in |
+| `SESSION_ACTION_NOT_ALLOWED` | 409 | Thao tác lên phiên không hợp lệ ở trạng thái hiện tại (phiên đã đóng/đã có chủ, chưa offline, số kWh ngoài giới hạn...) |
+| `PAYMENT_IN_PROGRESS` | 409 | Tạo thanh toán khi đã có giao dịch `pending` chưa hết hạn |
 | `PAYMENT_ALREADY_PROCESSED` | 409 | Phiên đã thanh toán đủ; hoặc thao tác hoàn tiền lên giao dịch không ở trạng thái cần hoàn |
 | `INVALID_SIGNATURE` | 400 | Chữ ký VNPay không khớp |
 | `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (`/auth/login`, check-in) hoặc mã check-in đang bị khoá do sai nhiều lần |
@@ -331,7 +321,7 @@ Access token 15 phút, refresh token 7 ngày. Mỗi request có token, backend �
 - `GET /payments/vnpay-return` — VNPay redirect **trình duyệt** về đây. Backend verify chữ ký rồi **redirect** về frontend (`/payment-result?status=success|failed&txnRef=...`). **Không cập nhật DB** ở route này (người dùng có thể sửa URL).
 - `GET /payments/vnpay-ipn` — VNPay **server** gọi ngầm bằng **GET** để xác nhận giao dịch thật (cả cọc và phiên). Backend verify chữ ký, **so số tiền** với giao dịch đã lưu, rồi trả đúng format VNPay: `{ "RspCode": "00", "Message": "Confirm Success" }`. Mã lỗi: `97` sai chữ ký, `01` không thấy giao dịch, `04` sai số tiền, `02` đã xử lý. Giao dịch thành công nhưng đã có giao dịch thành công khác cho cùng phiên/booking, hoặc cọc của booking đã bị huỷ → vẫn ghi nhận `success`, đặt `refundStatus = "due"`, trả `00`.
 
-**Biến môi trường** (`backend/.env.example`): `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_URL`, `VNPAY_RETURN_URL`. IPN URL khai trên cổng merchant VNPay (khi demo dùng tunnel, xem `LUONG_NGHIEP_VU.md` mục 13).
+**Biến môi trường** (`backend/.env.example`): `VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`, `VNPAY_URL`, `VNPAY_RETURN_URL`. IPN URL khai trên cổng merchant VNPay (khi demo dùng tunnel, xem `README.md` mục "Demo VNPay thật").
 
 ### Sự cố — `/incidents`
 
