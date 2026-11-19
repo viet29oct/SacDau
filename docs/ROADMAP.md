@@ -1,119 +1,117 @@
-# Roadmap — Người 2 (Backend core & Bảo mật) / Người khởi tạo dự án
+# Roadmap & tiến độ — SacDau
 
-File này là danh sách việc sống — **tick checkbox khi xong, thêm dòng vào "Nhật ký cập nhật" ở cuối mỗi khi có thay đổi lớn**. Không xoá mục đã làm, chỉ tick `[x]` để sau này cả nhóm biết đã qua giai đoạn nào.
+Danh sách việc chung của cả nhóm. Xong việc nào thì tick `[x]` ngay trong PR làm việc đó; xong 1 mốc lớn thì thêm 1 dòng vào "Mốc đã qua" ở cuối. Chi tiết kỹ thuật không ghi ở đây — trỏ sang `contracts.md` / `LUONG_NGHIEP_VU.md`.
 
-Tham chiếu: `TECH_STACK.md` (công nghệ), `QUY_TAC_LAM_VIEC_NHOM.md` (luật chơi chung), `FEATURES.md` (phạm vi tính năng đã chốt), `contracts.md` (JSON contract).
+Cập nhật: 2026-11-19.
 
----
+## Tổng quan
 
-## Phase 0 — Khởi tạo dự án (làm trước, 1 mình)
+| Mảng | Phụ trách | Trạng thái |
+|---|---|---|
+| Hạ tầng (Docker, Postgres/PostGIS, Mosquitto có xác thực) | Người 2 | ✅ Xong |
+| Backend API + luồng nghiệp vụ | Người 2 | ✅ Xong, `npm test` 134/134. Code Phase 5b đang ở nhánh `Viet`, **chưa vào `main`** |
+| IoT (firmware ESP32/Wokwi) | Người 1 | ✅ Chạy thật với server qua Wokwi VS Code — cần Người 1 xem lại |
+| Frontend | chưa chốt | 🟡 Có khung, landing, đăng nhập/đăng ký; các trang chức năng còn là placeholder |
+| GIS | Người 3 | ⬜ Chưa bắt đầu phần phân tích (API tìm trạm gần đã có) |
+| Kiểm thử bảo mật (Web an toàn) | Người 2 | ⬜ Chưa bắt đầu (chỉ có `npm audit`) |
 
-- [x] Tạo repo Git (`https://github.com/viet29oct/SacDau.git`), clone về máy, push khung ban đầu lên `main`.
-- [ ] Thêm 2 thành viên còn lại làm collaborator trên GitHub (Settings → Collaborators) — việc này làm trên web, tool không tự làm được.
-- [x] Tạo cấu trúc thư mục gốc theo `TECH_STACK.md` mục 3 (`iot/`, `backend/`, `frontend/`, `gis/`, `analytics/`, `security/`, `docs/`).
-- [x] Tạo `.gitignore` gốc (node_modules, .env, __pycache__, venv, *.pbix tạm, .vscode).
-- [x] Chuyển `TECH_STACK.md`, `QUY_TAC_LAM_VIEC_NHOM.md`, `ROADMAP.md` vào `docs/` — cần 2 người kia đọc và xác nhận trong group chat.
-- [x] Chốt version công cụ theo mục 1 của `QUY_TAC_LAM_VIEC_NHOM.md` (Node `24.19.0`, Python `3.14.x`): tạo `.nvmrc`, tạo `requirements.txt` rỗng ban đầu (sẽ điền sau).
-- [x] Nhánh `main` đã có (mặc định khi tạo repo).
-- [ ] Bảo vệ nhánh `main` (Settings → Branches → Branch protection rule: require PR review trước khi merge) — làm trên web.
-- [ ] Báo nhóm: tạo nhánh riêng theo mẫu `feature/iot-...`, `feature/backend-...`, `feature/gis-...`, không code trực tiếp trên `main`.
+## Cần cả nhóm chốt
 
-## Phase 1 — Hạ tầng & khung server (vùng cấm — chỉ bạn làm)
-
-- [x] Viết `docker-compose.yml`: service PostgreSQL+PostGIS (`postgis/postgis:16-3.4`), service Mosquitto (`eclipse-mosquitto:2.0.18`), volume `pgdata`.
-  - ⚠️ Máy khởi tạo dự án có Postgres native sẵn chiếm cổng `5432` → đã đổi cổng host Postgres sang **`5433`** (`DATABASE_URL` trong `.env.example` đã trỏ đúng). Ai máy sạch vẫn connect bình thường qua `5433`.
-- [x] Test `docker compose up` chạy được, connect Postgres OK (test qua `/health`, xem bên dưới).
-- [x] Viết migration khởi tạo schema bằng **node-pg-migrate** (`backend/migrations/1791819717249_init.js`): bảng `users`, `stations` (có cột `geom`), `ports`, `bookings`, `charging_sessions`, `telemetry`, `audit_logs` — theo gợi ý ở `TECH_STACK.md` mục 2.4. Đã chạy `npm run migrate:up` thành công.
-- [x] Viết `backend/src/db/index.ts` (pool connection `pg`, đọc `DATABASE_URL` từ `.env`).
-- [x] Viết `backend/src/app.ts` + `server.ts` bằng **TypeScript** (khung Express + helmet + cors, listen port từ `.env`).
-- [x] Viết `.env.example` ở root (Postgres) và `backend/.env.example` (PORT, DATABASE_URL, JWT_SECRET, MQTT_BROKER_URL).
-- [x] Test server chạy `GET /health` trả 200 + kết nối DB thành công — đã verify: `{"success":true,"data":{"status":"ok","db":"connected"}}`.
-- [ ] **Thông báo nhóm** theo mẫu câu ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3 — khoá file config/DB lại, mọi người chỉ import. (Bạn tự gửi vào group chat.)
-
-## Phase 2 — Chốt contract chung (làm cùng cả nhóm, không làm riêng)
-
-- [x] Tạo `docs/contracts.md`: MQTT payload (1 topic duy nhất `stations/{stationId}/status`), response envelope chuẩn, object `User`/`Station`/`Port`/`Booking`/`ChargingSession`, danh sách đầy đủ endpoint theo đúng người phụ trách ở mục 2 của `QUY_TAC_LAM_VIEC_NHOM.md`. Khớp 1:1 với schema đã migrate ở Phase 1.
-- [ ] Gửi `docs/contracts.md` cho Người 1 (IoT) và Người 3 (GIS/Analytics) đọc, góp ý field còn thiếu trước khi code route/giao diện.
-- [ ] Chốt bản cuối, cả 3 người xác nhận đồng ý trong group chat (lưu lại làm "bằng chứng" nếu sau có tranh cãi field).
-- [ ] Setup Swagger/OpenAPI (`swagger-ui-express`) khung rỗng, sẽ điền dần khi có route.
-
-## Phase 3 — Auth & RBAC (lõi bảo mật)
-
-- [x] Route `/auth/register`, `/auth/login` — hash password bằng `bcrypt`.
-- [x] JWT: access token ngắn hạn + refresh token (`jsonwebtoken`).
-- [x] Middleware `authMiddleware` (verify JWT) + `rbacMiddleware` (check role: tài xế / chủ trạm / quản trị viên).
-- [x] Kiểm tra quyền sở hữu tài nguyên (chống IDOR) — ví dụ user A không sửa booking của user B.
-- [x] Route `/users` (CRUD cơ bản, chỉ admin thao tác người khác).
-- [x] Viết test `jest` + `supertest` cho auth (ít nhất: login đúng/sai, token hết hạn, route cần token mà không có token).
-
-## Phase 4 — Bảo mật hạ tầng (song song Phase 3)
-
-- [x] Cài `helmet` (security headers), `cors` (whitelist origin frontend) — `cors({ origin: process.env.FRONTEND_URL })`, mặc định `http://localhost:5173`.
-- [x] Cài `express-rate-limit` cho route login (chống brute force) — `src/middleware/rateLimiter.ts`, 10 lần/15 phút/IP, trả lỗi `TOO_MANY_REQUESTS` (429, đã thêm vào `contracts.md`).
-- [x] Input validation bằng `zod` cho toàn bộ route nhận body (`/auth/register`, `/auth/login`, `/auth/refresh`, `PATCH /users/:id`) — `src/validation/schemas.ts` + `validate.ts`, bọc lại đúng logic validate tay cũ (không đổi hành vi), tự strip field lạ (chống mass assignment).
-- [x] Đảm bảo toàn bộ query DB dùng tham số hoá (`$1, $2`) — đã rà lại toàn bộ code hiện có của Người 2 (`routes/`, `services/`), không có nối chuỗi SQL. Phần "review code Người 1/3" chờ họ mở PR `/stations`/`/telemetry` (xem Phase 5).
-- [x] Logging bằng `pino`: `pino-http` log mọi request (`app.ts`, im lặng khi `NODE_ENV=test`), `src/services/audit.ts` ghi riêng đăng nhập (`auth.login`, cả thành công/thất bại) + sửa thông tin tài khoản (`user.update`) vào bảng `audit_logs`.
-- [x] `npm audit` định kỳ, ghi lại kết quả vào `security/` — `security/npm-audit/README.md` + báo cáo `2026-10-14` (frontend sạch, backend có 22 cảnh báo dev-only từ `node-pg-migrate`/`jest`, chưa fix vì breaking change, cần báo nhóm trước).
-
-## Phase 5 — Route nghiệp vụ còn lại (thuộc phạm vi Người 2)
-
-> **Mô hình nghiệp vụ mới (2026-10-29):** 1 công ty vận hành nhiều trạm, `admin` phân công `owner` quản lý — đã chốt ở `docs/contracts.md` (mục 1, 1b, 3, 4) và `docs/FEATURES.md` (mục 1, 3, 4). Checklist dưới đây đã cập nhật theo mô hình này.
-
-- [ ] `/bookings` — đặt chỗ sạc: validate `startTime >= now`, `endTime > startTime`; kiểm tra trùng giờ/trùng port (`409 BOOKING_CONFLICT`); tạo ngay `status = 'confirmed'` (bỏ bước `pending`).
-- [ ] `PATCH /bookings/:id/cancel` — chỉ chính tài xế, booking chưa `cancelled`, còn trước `startTime` (vi phạm → `400 BOOKING_CANCEL_NOT_ALLOWED`).
-- [ ] `/reports` — báo cáo tổng hợp (doanh thu, số phiên sạc...).
-- [x] **Đăng ký tài khoản sandbox VNPay** tại `sandbox.vnpayment.vn`, lấy `VNPAY_TMN_CODE` + `VNPAY_HASH_SECRET`, điền vào `backend/.env` (không commit) — xong 2026-10-30.
-- [ ] Thêm biến `UNIT_PRICE_PER_KWH` (mặc định `3500`) vào `backend/.env.example` — dùng tính `cost` khi đóng phiên sạc (xem `contracts.md` mục 1).
-- [ ] Viết `backend/src/services/vnpay.js` — helper build URL thanh toán (ký HMAC-SHA512) + verify signature khi nhận callback.
-- [ ] Route `/payments` (POST tạo thanh toán — kiểm tra sở hữu qua `booking_id → bookings.user_id` và chưa có giao dịch `success` nào, GET xem trạng thái), `/payments/vnpay-return`, `/payments/vnpay-ipn` — đúng theo `docs/contracts.md` mục 4.
-- [ ] Review PR của `/stations` (Người 3) khi mở PR — khớp mô hình mới: `POST`/`DELETE /stations` chỉ admin, thêm `PATCH /stations/:id/assign-owner` (chỉ admin), `PATCH /stations/:id` giới hạn owner-được-phân-công.
-- [ ] Review PR của `/telemetry` + MQTT subscriber (Người 1) khi mở PR — đúng state machine `charging_sessions` mới (mục 1 `contracts.md`: mở phiên có/không booking, đóng phiên tính `cost`) và có phát WebSocket (mục 1b).
-- [ ] **Chưa chốt:** ai viết `services/websocket.js` (phát event `port:update`/`session:update`) — nằm giữa ranh giới Người 1 (MQTT) và Người 2 — cần họp nhóm quyết định trước khi code.
-
-## Phase 6 — Kiểm thử bảo mật cuối kỳ (phục vụ báo cáo môn Web an toàn)
-
-- [ ] Chạy OWASP ZAP quét toàn bộ API, lưu báo cáo vào `security/zap-report/`.
-- [ ] Thử tấn công SQL Injection bằng `sqlmap` lên 1-2 endpoint để chứng minh đã vá (trước/sau khi có tham số hoá).
-- [ ] Review code bằng ESLint `eslint-plugin-security` hoặc Semgrep, sửa các warning quan trọng.
-- [ ] Viết báo cáo tổng hợp lỗ hổng đã tìm + cách vá (dùng cho báo cáo môn).
-
-## Việc duy trì liên tục (xuyên suốt dự án, không thuộc 1 phase cụ thể)
-
-- [ ] Review PR của 2 người còn lại trước khi merge vào `main`.
-- [ ] Mọi thay đổi vào file "vùng cấm" (`docker-compose.yml`, `db/index.js`, `app.js`, migration) — chỉ bạn sửa, nhớ báo nhóm sau khi sửa.
-- [ ] Khi có field/API mới phát sinh ngoài kế hoạch — cập nhật `docs/contracts.md` trước, code sau.
-- [ ] Theo dõi `.env.example` luôn khớp với biến thực tế đang dùng.
-- [ ] Cập nhật `TECH_STACK.md` nếu đổi/thêm công nghệ giữa đường (và báo nhóm).
+- [ ] **Ai làm frontend** cho 3 vai trò bên dưới — đặc biệt màn hình **quản lý trạm**: thiếu nó thì luồng check-in không demo được trên giao diện.
+- [ ] Người 1 xem lại `iot/sketch.ino` (đã được sửa để khớp luồng mới, xem mục IoT).
+- [ ] Sau khi Phase 5b vào `main`: nhánh `Phi`, `Huan` rebase lên `main` và đọc `LUONG_NGHIEP_VU.md` + `contracts.md` (nhiều hành vi đã đổi).
 
 ---
 
-## Nhật ký cập nhật
+## Backend — Người 2
 
-> Ghi ngắn gọn mỗi khi hoàn thành 1 mốc lớn hoặc đổi hướng. Format: `YYYY-MM-DD — việc đã làm / quyết định thay đổi`.
+Đã xong (chi tiết hành vi ở `LUONG_NGHIEP_VU.md`, endpoint ở `contracts.md`):
 
-- 2026-10-12 — Tạo roadmap, chưa bắt đầu Phase 0.
-- 2026-10-12 — Bắt đầu Phase 0: clone repo `SacDau` về máy, dựng cấu trúc thư mục, `.gitignore`, `.nvmrc` (24.19.0), `requirements.txt` rỗng, chuyển 3 file docs vào `docs/`. Còn thiếu: add collaborator + bật branch protection trên GitHub (web, chưa tự làm được), và báo nhóm quy tắc tạo nhánh `feature/...`.
-- 2026-10-12 — Hoàn thành Phase 1: `docker-compose.yml` (Postgres+PostGIS cổng `5433` do máy có Postgres native sẵn, Mosquitto cổng `1883`/`9001`), backend chuyển sang **TypeScript**, migration bằng **node-pg-migrate** (schema 7 bảng đã chạy thành công), `/health` test connect DB OK. Còn thiếu: gửi tin thông báo khoá file config/DB lên group chat (mẫu câu có sẵn ở `QUY_TAC_LAM_VIEC_NHOM.md` mục 3).
-- 2026-10-12 — Soạn bản nháp `docs/contracts.md` (MQTT 1 topic, response envelope, object chuẩn, endpoint đầy đủ theo người phụ trách). Bạn sẽ đưa nhóm đọc và yêu cầu tuân theo — còn thiếu bước xác nhận cả 3 người đồng ý trong chat.
-- 2026-10-12 — Chốt phạm vi tính năng cuối cùng (`docs/FEATURES.md`): cắt routing thật/review/chatbot/ví giả lập, **giữ lại thanh toán VNPay sandbox** gắn vào phiên sạc đã kết thúc. Đã thêm bảng `payments` (migration mới, chạy thành công), cập nhật `contracts.md` (object `Payment`, endpoint `/payments/*`, 2 route ngoại lệ không theo envelope chuẩn vì VNPay quy định format riêng) và `.env.example` (`VNPAY_TMN_CODE`, `VNPAY_HASH_SECRET`...). Còn thiếu: đăng ký tài khoản sandbox VNPay để lấy TMN code/hash secret thật (xem Phase 5).
-- 2026-10-13 — Xong Phase 3 (nhánh `feature/backend-auth`): register/login/refresh (JWT access 15m + refresh 7d, 2 secret riêng), `authMiddleware` + `rbacMiddleware` + `assertOwnerOrAdmin` (chống IDOR), `/users/me`, `/users`, `PATCH /users/:id`, error handler chung; 29 test jest+supertest chạy trên DB riêng `sacdau_test`. Dùng `bcryptjs` thay `bcrypt` (thuần JS, không cần build native trên Windows). Thêm error code `EMAIL_ALREADY_EXISTS`.
-- 2026-10-13 — Viết lại lịch sử `main` để xoá attribution Claude (main = `11758b6`). Tạo nhánh cá nhân `Viet`/`Phi`/`Huan`. Cài skill UI/UX Pro Max local (`.claude/`, không commit). Kế tiếp: dựng khung frontend (React + Vite, đề xuất JS + Tailwind).
-- 2026-10-13 — Dựng khung frontend (`frontend/`): React `19.3.0` + Vite `8.3.4` (JS, version cứng) + **Tailwind v4** (`@tailwindcss/vite`, không cần `tailwind.config.js`) + `react-router-dom` `7.18.4`. API client `src/api/client.js` (envelope `success/data/error`, tự gọi `/auth/refresh` khi gặp `UNAUTHORIZED` rồi retry 1 lần). Auth state qua React Context (`src/context/AuthContext.jsx`, hook `useAuth`), token lưu `localStorage`. `ProtectedRoute` theo role (`driver`/`owner`/`admin`). Trang `Login`/`Register` nối backend thật, trang placeholder `Stations`/`Bookings`/`Reports` (Người 3 điền bản đồ/biểu đồ), `404`. Component UI tự viết bằng Tailwind thuần (`Button`/`Input`/`Card`), không dùng thư viện component. Giao diện tiếng Việt, chưa làm dark mode. Backend: đổi `cors()` sang whitelist `FRONTEND_URL` (`backend/src/app.ts`, `.env.example` + `.env` cục bộ đã thêm biến). Đã test thủ công bằng `curl` (register → login → `/users/me` với token, kiểm tra header `Access-Control-Allow-Origin`) — không test được bằng browser tự động do Chrome extension chưa kết nối. Còn thiếu: ESLint/Prettier cho `frontend/` (mục 7 `QUY_TAC_LAM_VIEC_NHOM.md`, backend cũng chưa có), ai mở app cần tự mở browser kiểm tra UI bằng mắt.
-- 2026-10-14 — Thêm **landing page công khai** ở `/` (`frontend/src/pages/LandingPage.jsx`), không còn bắt đăng nhập ngay khi vào web. Màu brand `navy` (`#113259`) + `forest` (`#2A623D`) khai báo qua Tailwind v4 `@theme` (`src/index.css`), áp lại cho toàn bộ UI cũ (Button/Input/Navbar/Login/Register — trước đó tạm dùng `emerald`). Hero có ảnh nền (`public/images/bg1.jpg`, đã resize+compress bằng `sharp` dùng tạm rồi gỡ, không thêm vào `package.json`) + gradient bám theo chuột (`hooks/useMouseGradient.js`) + khối glassmorphism + parallax nhẹ (`hooks/useParallax.js`). Scroll reveal (`components/landing/Reveal.jsx`, IntersectionObserver) và animation counter (`components/landing/Counter.jsx`) dùng lại ở section Thống kê/Tính năng/Quy trình/Vai trò. Section "Lựa chọn vai trò" (ảnh `taixe.png`/`chutram.png`) check đăng nhập trước khi chuyển hướng — chưa đăng nhập thì hiện modal (`AuthGateModal.jsx`) mời đăng nhập thay vì chuyển trang luôn.
-  - **Đổi cấu trúc route quan trọng**: `/` không còn là trang dashboard sau đăng nhập — tách thành `/driver-dashboard` (role `driver`) và `/station-dashboard` (role `owner`), map qua `src/utils/roleDashboard.js`. Sau login/register, điều hướng theo role (admin → `/reports`, tạm thời vì chưa có trang admin riêng — xem phần "Việc còn treo"). Thêm 3 trang placeholder công khai `/gioi-thieu`, `/tin-tuc`, `/ho-tro`.
-  - Thêm `frontend/public/favicon.svg` (khắc phục 404 favicon thấy trong console log).
-  - Test: build `vite build` qua, dev server `curl` từng file nguồn (200 OK, không lỗi transform), **chưa xem bằng mắt** (Chrome extension của Claude vẫn chưa kết nối được) — bạn cần tự mở `npm run dev` và kiểm tra lại hiệu ứng động, responsive mobile, đặc biệt là gradient theo chuột và glassmorphism ở Hero.
-- 2026-10-14 — Hoàn thành phần còn lại của **Phase 4 — Bảo mật hạ tầng**:
-  - `express-rate-limit`: `src/middleware/rateLimiter.ts`, áp cho `POST /auth/login` (10 lần/15 phút/IP), trả `429 TOO_MANY_REQUESTS` (đã thêm vào `contracts.md` + `TECH_STACK.md`).
-  - `zod` (`4.6.7`, version cứng): `src/validation/schemas.ts` bọc lại `parseName`/`parseEmail`/`parsePassword` (service cũ) thành field zod qua `wrapParser` — không viết trùng logic, giữ nguyên hành vi (trim/lowercase email, giới hạn 72 byte cho bcrypt). `src/validation/validate.ts` export `validateBody` (middleware, dùng cho register/login/refresh) và `parseBody` (gọi tay, dùng cho `PATCH /users/:id` để giữ đúng thứ tự: kiểm tra quyền sở hữu *trước* khi validate body). zod tự strip field lạ khỏi body (object không `.strict()`) → thêm 1 lớp chống mass assignment.
-  - Logging: `pino` (`10.4.0`) + `pino-http` (`11.0.0`, log mọi request qua `app.ts`, im lặng khi `NODE_ENV=test` để không rối output `npm test`) + `pino-pretty` (`13.2.0`, format màu lúc dev, tắt ở production). `src/services/audit.ts` ghi riêng `auth.register`, `auth.login` (cả thành công/thất bại), `user.update` vào bảng `audit_logs` có sẵn — lỗi ghi audit không làm fail request chính.
-  - `npm audit`: frontend 0 lỗ hổng; backend 22 cảnh báo (20 moderate, 2 high) nhưng toàn bộ ở dev dependency (`node-pg-migrate`→`glob`, `jest`/`ts-jest`→`sprintf-js`/`js-yaml`), không lộ qua API lúc chạy, fix đòi breaking change nên **chưa fix**, chờ báo nhóm. Chi tiết: `security/npm-audit/README.md`.
-  - Test: backend `tsc` build qua, `npm test` 29/29 pass (không đổi hành vi nào bị test cũ bắt được), tự `curl` xác minh rate limit (401 × 10 rồi 429 ở lần 11) và audit log ghi đúng vào DB + console (pino-pretty).
-- 2026-10-27 — **Đổi ngôn ngữ backend từ TypeScript về JavaScript thuần (CommonJS)**, theo yêu cầu môn Ngôn ngữ kịch bản. Chuyển tay toàn bộ 17 file `backend/src/**/*.ts` + 4 file `backend/tests/*.ts` sang `.js` (`require`/`module.exports`, bỏ hết type annotation/interface), xoá `tsconfig.json` + `dist/` (build artifact). `package.json`: bỏ `typescript`/`tsx`/`ts-jest`/toàn bộ `@types/*`; `dev` đổi sang `node --watch src/server.js`, `start` chạy thẳng `node src/server.js` (không còn bước `build`); `jest.config.js` bỏ preset `ts-jest`. Cập nhật đường dẫn `.ts` → `.js` trong `TECH_STACK.md`, `QUY_TAC_LAM_VIEC_NHOM.md`, `contracts.md`, `ROADMAP_GIS.md` (file tương lai của Người 1/3 cũng đổi quy ước sang `.js`).
-  - **Bug phát hiện lúc convert** (không phải lỗi logic cũ, do viết lại `db/index.js`): bản đầu tay viết `module.exports.query = (text, params) => pool.query(text, params)` — vì `module.exports` chính là `pool` nên câu này tự đè `pool.query` bằng 1 hàm gọi lại chính nó → đệ quy vô hạn (`RangeError: Maximum call stack size exceeded`), 29/29 test fail ngay lần chạy đầu. Sửa bằng cách giữ tham chiếu gốc `pool.query.bind(pool)` vào biến riêng trước khi gán đè.
-  - Test sau khi sửa: `npm test` 29/29 pass (DB thật qua Docker, không mock). Chạy `npm run dev` thật, tự `curl` xác minh lại toàn bộ luồng: `/health`, `register` → `login` → `/users/me` (token hợp lệ + 401 khi thiếu token), `create-admin` script, audit log ghi đúng vào bảng `audit_logs`, rate limit `429` sau 10 lần login sai, `404` đúng envelope. Dữ liệu test tạo trong DB dev đã xoá sạch sau khi kiểm thử xong.
-- 2026-10-29 — Họp nhóm chốt lại mô hình nghiệp vụ: bỏ marketplace (chủ trạm tự đăng ký), chuyển sang **1 công ty vận hành nhiều trạm**, `admin` phân công `owner` quản lý trạm (schema không đổi, `stations.owner_id` đã có sẵn). Cập nhật `docs/contracts.md` (mục 1 — state machine `charging_sessions` chi tiết + `UNIT_PRICE_PER_KWH`; mục 1b — WebSocket mới `port:update`/`session:update`; mục 3 — `Station.ownerId`/`ChargingSession.bookingId` nullable; mục 4 — endpoint `/stations` theo quyền mới, điều kiện `/bookings` và `/payments`), `docs/FEATURES.md` (mục 1, 2, 3, 4) và `docs/TECH_STACK.md` (WebSocket lên [Bắt buộc], thêm hằng số đơn giá, thêm timing-attack mitigation). Cập nhật checklist Phase 5 ở file này theo contract mới. **Còn thiếu:** quyết định ai viết `services/websocket.js` (Người 1 hay Người 2), báo Phi/Huan về mô hình mới trước khi họ động vào `/stations`/`/telemetry`, và đưa văn bản đặc tả gốc (hiện nằm trong `.claude/`, đang bị `.gitignore`) ra khỏi vùng không commit để cả nhóm đọc được.
-- 2026-10-30 — Viết đầy đủ route Phase 5 theo mô hình nghiệp vụ mới (29/10): `/stations` (GET public, POST/DELETE/`:id/assign-owner` chỉ admin, PATCH owner-được-phân-công), `/bookings` (POST tạo + validate trùng giờ, `GET /bookings/me`, `PATCH /:id/cancel`), `/sessions`, `/reports/revenue`+`/reports/usage`, `/payments` (tạo + `vnpay-return`/`vnpay-ipn`), service `stations.js`/`chargingSessions.js`/`vnpay.js`, cộng `services/mqtt.js` (subscriber, state machine mở/đóng phiên) + `services/websocket.js` (phát `port:update`/`session:update` — tạm tự viết, **chưa họp nhóm chốt** ai giữ file này, xem mục còn thiếu ngày 29/10). `server.js` đổi sang `http.createServer` để gắn chung `WebSocketServer` + khởi động `mqttService` lúc boot. Migration mới `add-station-code` (thêm `stations.code` dùng tra cứu khi nhận MQTT, không trả ra API). Test mới: `bookings.test.js`/`payments.test.js`/`stations.test.js`.
-  - Test: `npm test` 65/65 pass (đã migrate `add-station-code` cho cả DB dev và `sacdau_test`). Chạy thật `node src/server.js`: kết nối DB + MQTT broker OK, `curl` xác minh `/health`, `/stations` (public, đúng envelope), `/bookings/me` + `/reports/revenue` trả `401` đúng khi thiếu token.
-  - Đăng ký xong tài khoản sandbox VNPay, điền `VNPAY_TMN_CODE`/`VNPAY_HASH_SECRET` thật vào `backend/.env` (không commit, xem `.env.example`).
-  - **Chưa làm**: chưa test luồng `/payments` end-to-end qua VNPay sandbox thật (chỉ mới điền credential), chưa commit toàn bộ thay đổi Phase 5 ở trên.
+- [x] Khung Express, migration `node-pg-migrate`, `/health`
+- [x] Auth: register (chỉ `driver`), login, refresh; RBAC 3 vai trò; chống IDOR; admin tạo `owner`, khoá/mở tài khoản (có hiệu lực ngay)
+- [x] Bảo mật nền: helmet, CORS whitelist, rate-limit login, zod, pino + audit log, chống dò email
+- [x] Trạm/cổng: CRUD admin, ngừng hoạt động (soft), phân công quản lý, bảo trì cổng, tìm trạm gần (PostGIS)
+- [x] Đặt chỗ + cọc VNPay + check-in bằng mã (khoá sau 5 lần sai, đổi cổng, gắn phiên)
+- [x] Engine phiên sạc từ MQTT (`sessionEngine.js`): phiên trái phép, phí chiếm chỗ, chống phiên ma/điện năng vô lý, giữ điện năng khi thiết bị khởi động lại
+- [x] Job định kỳ: hết hạn cọc, no-show, watchdog offline
+- [x] Thanh toán VNPay sandbox: trừ cọc, IPN so số tiền, giao dịch trùng → cần hoàn, admin xác nhận đã hoàn
+- [x] Sự cố, báo cáo doanh thu/sử dụng theo phạm vi owner
+- [x] WebSocket có xác thực (`port:update` công khai; `session:update`, `alert` theo quyền)
+- [x] Mosquitto bắt buộc đăng nhập + ACL theo trạm
+- [x] Script `create-admin`, `e2e:demo` (chạy thử toàn luồng rồi tự dọn)
+
+Còn lại:
+
+- [ ] (Nên có) Đối soát `querydr` với VNPay trong job hết hạn cọc — lưới an toàn khi IPN không tới
+- [ ] (Nên có) Swagger/OpenAPI (`swagger-ui-express`) cho báo cáo
+- [ ] Demo VNPay thật qua tunnel (cách làm ở `README.md`)
+
+## IoT — Người 1
+
+`iot/sketch.ino`, mạch `iot/diagram.json`. Đã chạy thật mạch ↔ server: cắm khi chưa check-in → phiên trái phép; giữ nút 2 giây / quá nhiệt → `fault`, đóng phiên, mở sự cố; hết nóng → `idle`.
+
+- [x] Đăng nhập broker bằng tài khoản trạm; bật/tắt TLS bằng `MQTT_USE_TLS` (TLS đang `setInsecure()`, đủ cho demo)
+- [x] Cấu hình bí mật tách ra `iot/secrets.h` (gitignore), mẫu `iot/secrets.example.h`
+- [x] Publish ngay khi đổi trạng thái + heartbeat 5 giây; giữ bản tin khi mất kết nối
+- [x] Chống dội nút (30 ms); giữ `charging` khi pin đầy, chỉ gửi `idle` khi rút súng
+- [x] `timestamp: null` khi chưa đồng bộ NTP; `energyKwh` chỉ tăng trong 1 phiên
+- [x] Tự kết nối lại WiFi/MQTT không chặn vòng lặp
+- [ ] Người 1 xem lại và xác nhận
+- [ ] (Tuỳ chọn) Biến trở thứ 2 để giả lập riêng từng cổng đầy pin
+- [ ] (Tuỳ chọn) Chạy trên wokwi.com với broker cloud có TLS (EMQX Cloud Serverless) — chưa thử, xem `mosquitto/README.md`
+
+## Frontend — chưa chốt người làm
+
+Đã có: React + Vite + Tailwind, router theo vai trò, API client (tự refresh token), landing page, đăng nhập/đăng ký. Các trang `/driver-dashboard`, `/station-dashboard`, `/stations`, `/bookings`, `/reports` còn là placeholder.
+
+- [ ] **Tài xế:** bản đồ trạm (Leaflet — xem mục GIS), chi tiết trạm + cổng real-time, đặt chỗ / đặt ngay → chuyển VNPay + đếm ngược 5 phút, danh sách booking + mã check-in, phiên đang sạc real-time + cảnh báo phí chiếm chỗ, trả phần còn lại, trang `/payment-result`
+- [ ] **Quản lý trạm:** booking hôm nay + nhập mã check-in (đổi cổng, gắn phiên), cảnh báo (phiên trái phép, xe đầy, sự cố), đóng tay phiên, bảo trì cổng, danh sách sự cố
+- [ ] **Admin:** tạo/khoá tài khoản nhân viên, quản lý trạm + phân công, danh sách cần hoàn, báo cáo (Chart.js). Hiện admin đăng nhập xong được đưa tạm về `/reports`
+- [ ] ESLint + Prettier (dùng chung config cho `frontend/` và `backend/`)
+
+## GIS — Người 3
+
+Hiện trạng: bảng `stations` có cột `geom GEOMETRY(Point, 4326)` + index GIST; `GET /stations?near=lat,lng&radiusKm=` đã lọc theo bán kính và sắp xếp theo khoảng cách (dùng `geography`, ra mét). `gis/data/`, `gis/scripts/` còn trống.
+
+**G0 — Dữ liệu** (làm trước)
+- [ ] Chọn khu vực nghiên cứu (1 quận/thành phố)
+- [ ] Tải ranh giới hành chính + đường từ OSM (QuickOSM hoặc Geofabrik) vào `gis/data/` (file `.pbf` thô để ở `gis/data/raw/`, không commit)
+- [ ] Điểm trạm: lấy `amenity=charging_station` từ OSM, hoặc tự rải 30–60 điểm giả lập (ghi rõ trong báo cáo)
+- [ ] Nạp trạm vào DB qua API `POST /stations` (admin) hoặc script seed — **cần `code` duy nhất cho mỗi trạm**; export lại đúng tập đó ra `gis/data/stations.geojson` để báo cáo khớp demo
+
+**G1 — Phân tích QGIS + PyQGIS** (lõi môn GIS)
+- [ ] QGIS 3.44 LTR kết nối thẳng PostGIS (layer `stations` từ DB, không export tay)
+- [ ] Reproject sang **EPSG:32648** trước khi đo/buffer (4326 là độ, buffer "mét" trên 4326 sẽ sai)
+- [ ] Phép 1: buffer vùng phục vụ (vd 2 km) → dissolve → lấy ranh giới trừ vùng phủ = **vùng trống**, tính diện tích km²
+- [ ] Phép 2: nearest neighbor từ tập điểm mẫu (dân cư/centroid) tới trạm gần nhất (`native:joinbynearest`)
+- [ ] Phép 3: đếm điểm dân cư/POI trong mỗi vùng phục vụ (`native:countpointsinpolygon`)
+- [ ] Gộp 3 phép thành 1 script chạy lại được: `gis/scripts/analysis.py`; lưu project `.qgz`, bản đồ PNG, kết quả GeoJSON vào `gis/`
+
+**G2 — Bản đồ web** (trong `frontend/src/pages/StationsPage.jsx`)
+- [ ] Cài `leaflet` + `react-leaflet` (version cứng)
+- [ ] Marker trạm từ `GET /stations`, màu theo trạng thái cổng, cập nhật qua WebSocket `port:update`
+- [ ] Lọc theo trạng thái + khoảng cách (`?near=`, vị trí từ `navigator.geolocation`)
+- [ ] (Tuỳ chọn) Overlay GeoJSON vùng trống từ G1
+
+**G3 — Báo cáo môn GIS:** nguồn dữ liệu, hệ toạ độ từng bước (và vì sao phải đổi), 3 phép phân tích + bản đồ + số liệu + nhận xét, kèm script và hướng dẫn chạy lại.
+
+## Kiểm thử bảo mật — Người 2 (môn Web an toàn)
+
+- [ ] OWASP ZAP quét toàn bộ API → `security/zap-report/`
+- [ ] Case study SQL Injection: 1 endpoint thử nghiệm cố ý lỗi, chứng minh bằng `sqlmap`, vá bằng tham số hoá
+- [ ] Rà mã nguồn bằng `eslint-plugin-security` hoặc Semgrep, sửa cảnh báo quan trọng
+- [ ] Cập nhật `npm audit` (lần trước: 2026-10-14, backend còn 22 cảnh báo ở dev dependency — `security/npm-audit/README.md`)
+- [ ] Báo cáo tổng hợp lỗ hổng đã tìm + cách vá
+
+---
+
+## Mốc đã qua
+
+- 2026-10-12 — Khởi tạo repo, Docker (Postgres+PostGIS cổng `5433`, Mosquitto), migration đầu tiên, chốt contract và phạm vi tính năng (giữ VNPay sandbox).
+- 2026-10-13 — Auth & RBAC (JWT, chống IDOR, test jest+supertest). Khung frontend React + Vite + Tailwind. Tạo nhánh `Viet`/`Phi`/`Huan`.
+- 2026-10-14 — Landing page; route dashboard theo vai trò. Bảo mật nền: rate-limit, zod, pino + audit log, `npm audit`.
+- 2026-10-27 — Backend đổi TypeScript → JavaScript CommonJS (yêu cầu môn Ngôn ngữ kịch bản).
+- 2026-10-29 — Đổi mô hình: 1 công ty nhiều trạm, admin phân công quản lý (bỏ marketplace).
+- 2026-10-30 — Route nghiệp vụ, MQTT subscriber, WebSocket, VNPay sandbox thật (sửa IPN sang GET). PR #8 vào `main`.
+- 2026-11-18 — Phase 5b "luồng nghiệp vụ thực tế": cọc khi đặt, check-in bằng mã, phiên trái phép, phí chiếm chỗ, chỉ VNPay, broker có xác thực + ACL. Bỏ môn Phân tích dữ liệu. Thêm `LUONG_NGHIEP_VU.md`.
+- 2026-11-19 — Firmware ESP32 khớp luồng mới, chạy thật với server qua Wokwi VS Code (`host.wokwi.internal`). Gọn lại tài liệu nhóm (gộp `ROADMAP_GIS.md` vào file này).

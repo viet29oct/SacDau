@@ -12,4 +12,17 @@ const loginRateLimiter = rateLimit({
   },
 });
 
-module.exports = { loginRateLimiter };
+// Check-in: ngoài khoá 10' sau 5 lần sai mã của từng booking (đếm trong DB), giới hạn thêm theo
+// tài khoản để không dò mã hàng loạt trên nhiều booking. Đặt sau authMiddleware (cần req.user).
+const checkinRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  keyGenerator: (req) => `user:${req.user?.id}`,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    fail(res, 429, 'TOO_MANY_REQUESTS', 'Thao tác check-in quá nhanh, vui lòng thử lại sau');
+  },
+});
+
+module.exports = { loginRateLimiter, checkinRateLimiter };

@@ -1,153 +1,126 @@
-const crypto = require('crypto');
 const request = require('supertest');
 const app = require('../src/app');
 const pool = require('../src/db');
-const { createAdmin, createStationWithPort, registerUser, resetDb } = require('./helpers');
+const {
+  createAdmin,
+  createStationWithPort,
+  latestPayment,
+  registerUser,
+  resetDb,
+  simulateIpn,
+  withValidSignature,
+} = require('./helpers');
 
 beforeEach(resetDb);
 afterAll(() => pool.end());
 
-// Tạo trực tiếp 1 port bằng SQL (không qua /auth/login nhiều lần -> tránh chạm rate limit,
-// quyền tạo trạm đã test riêng ở stations.test.js)
-const createPort = async () => (await createStationWithPort()).portId;
-
-const createBookingRow = async (userId, portId) => {
+// Phiên đã đóng của tài xế: tổng 50.000đ, cọc đã trừ 20.000đ -> còn 30.000đ
+const createSession = async ({ portId, userId = null, ended = true, cost = 50000, depositApplied = 20000 }) => {
   const { rows } = await pool.query(
-    `INSERT INTO bookings (user_id, port_id, start_time, end_time, status)
-     VALUES ($1, $2, now() - interval '3 hour', now() - interval '2 hour', 'confirmed')
+    `INSERT INTO charging_sessions (port_id, user_id, started_at, ended_at, energy_kwh, unit_price, energy_cost, cost, deposit_applied)
+     VALUES ($1, $2, now() - interval '1 hour', ${ended ? 'now()' : 'NULL'}, 10, 3500, $3, $3, $4)
      RETURNING id`,
-    [userId, portId],
+    [portId, userId, ended ? cost : null, ended ? depositApplied : 0],
   );
   return rows[0].id;
 };
 
-const createSession = async ({ portId, bookingId = null, ended = true, cost = 50000 }) => {
-  const { rows } = await pool.query(
-    `INSERT INTO charging_sessions (booking_id, port_id, started_at, ended_at, energy_kwh, cost)
-     VALUES ($1, $2, now() - interval '1 hour', ${ended ? 'now()' : 'NULL'}, 10, $3)
-     RETURNING id`,
-    [bookingId, portId, ended ? cost : null],
-  );
-  return rows[0].id;
-};
+const pay = (token, chargingSessionId) =>
+  request(app).post('/payments').set('Authorization', `Bearer ${token}`).send({ chargingSessionId });
 
-// Ký lại giống đúng thuật toán của services/vnpay.js để giả lập callback VNPay trong test
-const sign = (params, hashSecret) => {
-  const sorted = Object.keys(params)
-    .filter((k) => params[k] !== undefined && params[k] !== null && params[k] !== '')
-    .sort()
-    .reduce((acc, k) => {
-      acc[k] = params[k];
-      return acc;
-    }, {});
-  const signData = Object.entries(sorted)
-    .map(([k, v]) => `${k}=${encodeURIComponent(String(v)).replace(/%20/g, '+')}`)
-    .join('&');
-  return crypto.createHmac('sha512', hashSecret).update(signData, 'utf-8').digest('hex');
-};
-
-const withValidSignature = (params) => ({
-  ...params,
-  vnp_SecureHash: sign(params, process.env.VNPAY_HASH_SECRET),
-});
-
-describe('POST /payments (điều kiện mở thanh toán)', () => {
-  it('phiên hợp lệ, đúng tài xế -> 201, trả paymentUrl', async () => {
-    const portId = await createPort();
+describe('POST /payments — trả phần còn lại sau phiên sạc', () => {
+  it('phiên của mình -> 201, số tiền = tổng - cọc đã trừ, link có hạn', async () => {
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
+    const sessionId = await createSession({ portId, userId: driver.user.id });
 
-    const res = await request(app)
-      .post('/payments')
-      .set('Authorization', `Bearer ${driver.accessToken}`)
-      .send({ chargingSessionId: sessionId });
+    const res = await pay(driver.accessToken, sessionId);
     expect(res.status).toBe(201);
     expect(res.body.data.paymentUrl).toMatch(/^https:\/\/sandbox\.vnpayment\.vn/);
-    expect(res.body.data.paymentUrl).toMatch(/vnp_SecureHash=/);
+    expect(res.body.data.paymentUrl).toMatch(/vnp_Amount=3000000/);
+    expect(res.body.data.paymentUrl).toMatch(/vnp_ExpireDate=/);
+    const payment = await latestPayment({ sessionId });
+    expect(payment).toMatchObject({ id: res.body.data.paymentId, status: 'pending', user_id: driver.user.id });
+    expect(Number(payment.amount)).toBe(30000);
   });
 
-  it('phiên vãng lai (không có booking) -> 403 FORBIDDEN', async () => {
-    const portId = await createPort();
+  it('phiên trái phép (không có chủ) hoặc của tài xế khác -> 403', async () => {
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
-    const sessionId = await createSession({ portId, bookingId: null });
-
-    const res = await request(app)
-      .post('/payments')
-      .set('Authorization', `Bearer ${driver.accessToken}`)
-      .send({ chargingSessionId: sessionId });
-    expect(res.status).toBe(403);
-  });
-
-  it('phiên của tài xế khác -> 403 FORBIDDEN', async () => {
-    const portId = await createPort();
-    const owner = await registerUser({ email: 'a@example.com' });
     const other = await registerUser({ email: 'b@example.com' });
-    const bookingId = await createBookingRow(owner.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-
-    const res = await request(app)
-      .post('/payments')
-      .set('Authorization', `Bearer ${other.accessToken}`)
-      .send({ chargingSessionId: sessionId });
-    expect(res.status).toBe(403);
+    const unauthorized = await createSession({ portId, userId: null });
+    const othersSession = await createSession({ portId, userId: other.user.id });
+    expect((await pay(driver.accessToken, unauthorized)).status).toBe(403);
+    expect((await pay(driver.accessToken, othersSession)).status).toBe(403);
   });
 
-  it('phiên chưa kết thúc -> 400 VALIDATION_ERROR', async () => {
-    const portId = await createPort();
+  it('phiên chưa kết thúc / cọc đã phủ đủ -> 400 VALIDATION_ERROR', async () => {
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId, ended: false });
-
-    const res = await request(app)
-      .post('/payments')
-      .set('Authorization', `Bearer ${driver.accessToken}`)
-      .send({ chargingSessionId: sessionId });
-    expect(res.status).toBe(400);
-    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    const running = await createSession({ portId, userId: driver.user.id, ended: false });
+    const covered = await createSession({ portId, userId: driver.user.id, cost: 15000, depositApplied: 15000 });
+    for (const id of [running, covered]) {
+      const res = await pay(driver.accessToken, id);
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    }
   });
 
-  it('đã có giao dịch success -> 409 PAYMENT_ALREADY_PROCESSED', async () => {
-    const portId = await createPort();
+  it('đang có giao dịch chưa hết hạn -> 409 PAYMENT_IN_PROGRESS; /checkout trả lại đúng link cũ', async () => {
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-    await pool.query(
-      "INSERT INTO payments (charging_session_id, amount, status, vnpay_txn_ref) VALUES ($1, 50000, 'success', 'TXN1')",
-      [sessionId],
-    );
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    const first = await pay(driver.accessToken, sessionId);
 
-    const res = await request(app)
-      .post('/payments')
-      .set('Authorization', `Bearer ${driver.accessToken}`)
-      .send({ chargingSessionId: sessionId });
-    expect(res.status).toBe(409);
-    expect(res.body.error.code).toBe('PAYMENT_ALREADY_PROCESSED');
+    const second = await pay(driver.accessToken, sessionId);
+    expect(second.status).toBe(409);
+    expect(second.body.error.code).toBe('PAYMENT_IN_PROGRESS');
+    expect(second.body.error.details.paymentId).toBe(first.body.data.paymentId);
+
+    const checkout = await request(app)
+      .get(`/payments/${first.body.data.paymentId}/checkout`)
+      .set('Authorization', `Bearer ${driver.accessToken}`);
+    expect(checkout.status).toBe(200);
+    expect(checkout.body.data.paymentUrl).toBe(first.body.data.paymentUrl);
+
+    // Hết hạn -> tạo giao dịch mới được
+    await pool.query("UPDATE payments SET expires_at = now() - interval '1 minute' WHERE id = $1", [
+      first.body.data.paymentId,
+    ]);
+    expect((await pay(driver.accessToken, sessionId)).status).toBe(201);
+  });
+
+  it('đã thanh toán -> 409 PAYMENT_ALREADY_PROCESSED; GET /sessions/me báo paid', async () => {
+    const { portId } = await createStationWithPort();
+    const driver = await registerUser();
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    const created = await pay(driver.accessToken, sessionId);
+    const payment = await latestPayment({ sessionId });
+    await simulateIpn(payment.vnpay_txn_ref, { amount: 30000 });
+
+    const again = await pay(driver.accessToken, sessionId);
+    expect(again.status).toBe(409);
+    expect(again.body.error.code).toBe('PAYMENT_ALREADY_PROCESSED');
+    const me = await request(app).get('/sessions/me').set('Authorization', `Bearer ${driver.accessToken}`);
+    expect(me.body.data[0]).toMatchObject({ amountDue: 30000, paymentStatus: 'paid' });
+    expect(created.status).toBe(201);
   });
 });
 
 describe('GET /payments/:id (chống IDOR)', () => {
-  it('chính chủ xem được, người khác -> 403, admin xem được', async () => {
-    const portId = await createPort();
+  it('chính chủ xem được, người khác -> 403, admin xem được; /checkout của người khác -> 403', async () => {
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
     const other = await registerUser({ email: 'b@example.com' });
     const admin = await createAdmin();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-    const { rows } = await pool.query(
-      "INSERT INTO payments (charging_session_id, amount, status, vnpay_txn_ref) VALUES ($1, 50000, 'pending', 'TXN2') RETURNING id",
-      [sessionId],
-    );
-    const paymentId = rows[0].id;
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    const { paymentId } = (await pay(driver.accessToken, sessionId)).body.data;
 
-    const ownRes = await request(app).get(`/payments/${paymentId}`).set('Authorization', `Bearer ${driver.accessToken}`);
-    expect(ownRes.status).toBe(200);
-
-    const otherRes = await request(app).get(`/payments/${paymentId}`).set('Authorization', `Bearer ${other.accessToken}`);
-    expect(otherRes.status).toBe(403);
-
-    const adminRes = await request(app).get(`/payments/${paymentId}`).set('Authorization', `Bearer ${admin.accessToken}`);
-    expect(adminRes.status).toBe(200);
+    const get = (token, path = '') => request(app).get(`/payments/${paymentId}${path}`).set('Authorization', `Bearer ${token}`);
+    expect((await get(driver.accessToken)).status).toBe(200);
+    expect((await get(other.accessToken)).status).toBe(403);
+    expect((await get(admin.accessToken)).status).toBe(200);
+    expect((await get(other.accessToken, '/checkout')).status).toBe(403);
   });
 
   it('id không tồn tại -> 404 PAYMENT_NOT_FOUND', async () => {
@@ -160,23 +133,18 @@ describe('GET /payments/:id (chống IDOR)', () => {
 
 describe('GET /payments/vnpay-return (không update DB, chỉ hiển thị kết quả)', () => {
   it('chữ ký sai -> redirect kèm reason=invalid_signature, không update payments', async () => {
-    const portId = await createPort();
+    const { portId } = await createStationWithPort();
     const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-    const { rows } = await pool.query(
-      "INSERT INTO payments (charging_session_id, amount, status, vnpay_txn_ref) VALUES ($1, 50000, 'pending', 'TXN3') RETURNING id",
-      [sessionId],
-    );
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    await pay(driver.accessToken, sessionId);
+    const payment = await latestPayment({ sessionId });
 
     const res = await request(app)
       .get('/payments/vnpay-return')
-      .query({ vnp_TxnRef: 'TXN3', vnp_ResponseCode: '00', vnp_SecureHash: 'sai-chu-ky' });
+      .query({ vnp_TxnRef: payment.vnpay_txn_ref, vnp_ResponseCode: '00', vnp_SecureHash: 'sai-chu-ky' });
     expect(res.status).toBe(302);
     expect(res.headers.location).toMatch(/reason=invalid_signature/);
-
-    const check = await pool.query('SELECT status FROM payments WHERE id = $1', [rows[0].id]);
-    expect(check.rows[0].status).toBe('pending');
+    expect((await latestPayment({ sessionId })).status).toBe('pending');
   });
 
   it('chữ ký đúng, responseCode 00 -> redirect status=success (vẫn không update DB)', async () => {
@@ -188,55 +156,98 @@ describe('GET /payments/vnpay-return (không update DB, chỉ hiển thị kết
 });
 
 describe('GET /payments/vnpay-ipn (VNPay gọi bằng GET, phải trả đúng format VNPay)', () => {
-  it('chữ ký sai -> RspCode 97', async () => {
-    const res = await request(app)
+  const setupPending = async () => {
+    const { portId } = await createStationWithPort();
+    const driver = await registerUser();
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    await pay(driver.accessToken, sessionId);
+    return { driver, sessionId, payment: await latestPayment({ sessionId }) };
+  };
+
+  it('chữ ký sai -> 97; giao dịch không tồn tại -> 01', async () => {
+    const bad = await request(app)
       .get('/payments/vnpay-ipn')
       .query({ vnp_TxnRef: 'TXN5', vnp_ResponseCode: '00', vnp_SecureHash: 'sai' });
-    expect(res.status).toBe(200);
-    expect(res.body.RspCode).toBe('97');
+    expect(bad.body.RspCode).toBe('97');
+    const missing = await simulateIpn('KHONG-TON-TAI', { amount: 1000 });
+    expect(missing.body.RspCode).toBe('01');
   });
 
-  it('vnp_TxnRef không tồn tại -> RspCode 01', async () => {
-    const signed = withValidSignature({ vnp_TxnRef: 'KHONG-TON-TAI', vnp_ResponseCode: '00' });
-    const res = await request(app).get('/payments/vnpay-ipn').query(signed);
-    expect(res.body.RspCode).toBe('01');
+  it('sai số tiền (giả mạo vnp_Amount) -> 04, giao dịch vẫn pending', async () => {
+    const { payment, sessionId } = await setupPending();
+    const res = await simulateIpn(payment.vnpay_txn_ref, { amount: 1000 });
+    expect(res.body.RspCode).toBe('04');
+    expect((await latestPayment({ sessionId })).status).toBe('pending');
   });
 
-  it('responseCode 00 -> cập nhật payments.status=success, trả RspCode 00', async () => {
-    const portId = await createPort();
-    const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-    const { rows } = await pool.query(
-      "INSERT INTO payments (charging_session_id, amount, status, vnpay_txn_ref) VALUES ($1, 50000, 'pending', 'TXN6') RETURNING id",
-      [sessionId],
-    );
-
-    const signed = withValidSignature({
-      vnp_TxnRef: 'TXN6',
-      vnp_ResponseCode: '00',
-      vnp_TransactionNo: '14231456',
-    });
-    const res = await request(app).get('/payments/vnpay-ipn').query(signed);
+  it('00 -> success + lưu mã giao dịch; IPN gọi lại -> 02', async () => {
+    const { payment, sessionId } = await setupPending();
+    const res = await simulateIpn(payment.vnpay_txn_ref, { amount: 30000 });
     expect(res.body).toEqual({ RspCode: '00', Message: 'Confirm Success' });
+    expect(await latestPayment({ sessionId })).toMatchObject({ status: 'success', vnpay_transaction_no: '14231456' });
 
-    const check = await pool.query('SELECT status, vnpay_transaction_no FROM payments WHERE id = $1', [rows[0].id]);
-    expect(check.rows[0].status).toBe('success');
-    expect(check.rows[0].vnpay_transaction_no).toBe('14231456');
+    const again = await simulateIpn(payment.vnpay_txn_ref, { amount: 30000 });
+    expect(again.body.RspCode).toBe('02');
   });
 
-  it('IPN gọi lại cho giao dịch đã xử lý -> RspCode 02, không xử lý lại', async () => {
-    const portId = await createPort();
-    const driver = await registerUser();
-    const bookingId = await createBookingRow(driver.user.id, portId);
-    const sessionId = await createSession({ portId, bookingId });
-    await pool.query(
-      "INSERT INTO payments (charging_session_id, amount, status, vnpay_txn_ref) VALUES ($1, 50000, 'success', 'TXN7')",
+  it('responseCode khác 00 -> failed, vẫn trả 00 cho VNPay', async () => {
+    const { payment, sessionId } = await setupPending();
+    const res = await simulateIpn(payment.vnpay_txn_ref, { amount: 30000, responseCode: '24' });
+    expect(res.body.RspCode).toBe('00');
+    expect((await latestPayment({ sessionId })).status).toBe('failed');
+  });
+
+  it('VNPay trừ tiền 2 lần cho cùng phiên -> lần 2 vẫn ghi nhận (success + cần hoàn), IPN không lỗi', async () => {
+    const { driver, payment: first, sessionId } = await setupPending();
+    await pool.query("UPDATE payments SET expires_at = now() - interval '1 minute' WHERE id = $1", [first.id]);
+    await pay(driver.accessToken, sessionId);
+    const second = await latestPayment({ sessionId });
+
+    expect((await simulateIpn(first.vnpay_txn_ref, { amount: 30000 })).body.RspCode).toBe('00');
+    expect((await simulateIpn(second.vnpay_txn_ref, { amount: 30000 })).body.RspCode).toBe('00');
+    const { rows } = await pool.query(
+      'SELECT id, status, refund_status FROM payments WHERE charging_session_id = $1 ORDER BY id',
       [sessionId],
     );
+    expect(rows).toEqual([
+      { id: first.id, status: 'success', refund_status: null },
+      { id: second.id, status: 'success', refund_status: 'due' },
+    ]);
+  });
+});
 
-    const signed = withValidSignature({ vnp_TxnRef: 'TXN7', vnp_ResponseCode: '00' });
-    const res = await request(app).get('/payments/vnpay-ipn').query(signed);
-    expect(res.body.RspCode).toBe('02');
+describe('Hoàn tiền (admin)', () => {
+  it('admin xem danh sách cần hoàn, xác nhận đã hoàn (có audit); xác nhận lại -> 409; tài xế -> 403', async () => {
+    const { portId } = await createStationWithPort();
+    const driver = await registerUser();
+    const admin = await createAdmin();
+    const sessionId = await createSession({ portId, userId: driver.user.id });
+    const { rows } = await pool.query(
+      `INSERT INTO payments (purpose, charging_session_id, user_id, amount, status, vnpay_txn_ref, refund_status, paid_at)
+       VALUES ('session', $1, $2, 30000, 'success', 'TXNDUP', 'due', now()) RETURNING id`,
+      [sessionId, driver.user.id],
+    );
+    const paymentId = rows[0].id;
+
+    const list = await request(app).get('/payments/refunds').set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(list.body.data.map((p) => p.id)).toEqual([paymentId]);
+    const byDriver = await request(app)
+      .post(`/payments/${paymentId}/mark-refunded`)
+      .set('Authorization', `Bearer ${driver.accessToken}`);
+    expect(byDriver.status).toBe(403);
+
+    const done = await request(app)
+      .post(`/payments/${paymentId}/mark-refunded`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ note: 'Đã chuyển khoản hoàn' });
+    expect(done.status).toBe(200);
+    expect(done.body.data.refundStatus).toBe('refunded');
+    const audit = await pool.query("SELECT detail FROM audit_logs WHERE action = 'payment.refunded'");
+    expect(audit.rows[0].detail).toMatchObject({ paymentId, amount: 30000 });
+
+    const again = await request(app)
+      .post(`/payments/${paymentId}/mark-refunded`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(again.status).toBe(409);
   });
 });

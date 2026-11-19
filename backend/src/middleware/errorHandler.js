@@ -6,7 +6,7 @@ const notFoundHandler = (_req, res) => {
 
 const errorHandler = (err, _req, res, _next) => {
   if (err instanceof AppError) {
-    fail(res, err.status, err.code, err.message);
+    fail(res, err.status, err.code, err.message, err.details);
     return;
   }
   // Body JSON sai cú pháp (express.json() ném lỗi này)

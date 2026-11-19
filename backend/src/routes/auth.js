@@ -26,16 +26,17 @@ router.post(
   '/auth/register',
   validateBody(registerSchema),
   asyncHandler(async (req, res) => {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     try {
+      // Tự đăng ký luôn là tài xế — owner do admin tạo (POST /users), admin tạo bằng script
       const { rows } = await query(
         `INSERT INTO users (name, email, password_hash, role)
-         VALUES ($1, $2, $3, $4) RETURNING *`,
-        [name, email, passwordHash, role],
+         VALUES ($1, $2, $3, 'driver') RETURNING *`,
+        [name, email, passwordHash],
       );
-      await logAudit(rows[0].id, 'auth.register', { email, role });
+      await logAudit(rows[0].id, 'auth.register', { email, role: 'driver' });
       ok(res, issueTokens(rows[0]), 201);
     } catch (err) {
       if (isUniqueViolation(err)) throw emailTakenError();
@@ -59,6 +60,11 @@ router.post(
       await logAudit(user?.id ?? null, 'auth.login', { email: normalizedEmail, success: false });
       throw new AppError(401, 'UNAUTHORIZED', 'Email hoặc mật khẩu không đúng');
     }
+    // Chỉ báo "đã khoá" sau khi đúng mật khẩu -> không lộ trạng thái tài khoản cho người đoán mò
+    if (!user.is_active) {
+      await logAudit(user.id, 'auth.login', { email: normalizedEmail, success: false, reason: 'disabled' });
+      throw new AppError(403, 'ACCOUNT_DISABLED', 'Tài khoản đã bị khoá, liên hệ quản trị viên');
+    }
     await logAudit(user.id, 'auth.login', { email: normalizedEmail, success: true });
     ok(res, issueTokens(user));
   }),
@@ -72,7 +78,9 @@ router.post(
     const payload = verifyRefreshToken(refreshToken);
     // Lấy role mới nhất từ DB (role có thể đã đổi, user có thể đã bị xoá)
     const user = await findUserById(Number(payload.sub));
-    if (!user) throw new AppError(401, 'UNAUTHORIZED', 'Tài khoản không còn tồn tại');
+    if (!user || !user.is_active) {
+      throw new AppError(401, 'UNAUTHORIZED', 'Tài khoản không còn tồn tại hoặc đã bị khoá');
+    }
     ok(res, { accessToken: signAccessToken(user.id, user.role) });
   }),
 );

@@ -17,11 +17,26 @@ const nameField = wrapParser(parseName);
 const emailField = wrapParser(parseEmail);
 const passwordField = wrapParser(parsePassword);
 
+// Tự đăng ký luôn là tài xế (2026-11-18): quản lý trạm là nhân viên, do admin tạo qua POST /users.
+// Giữ field role tuỳ chọn để frontend cũ gửi role='driver' vẫn chạy.
 const registerSchema = z.object({
   name: nameField,
   email: emailField,
   password: passwordField,
+  role: z
+    .literal('driver', { error: () => 'Chỉ đăng ký được tài khoản tài xế; tài khoản quản lý trạm do admin cấp' })
+    .optional(),
+});
+
+const createUserSchema = z.object({
+  name: nameField,
+  email: emailField,
+  password: passwordField,
   role: z.enum(['driver', 'owner'], { error: () => 'role phải là driver hoặc owner' }),
+});
+
+const userStatusSchema = z.object({
+  isActive: z.boolean({ error: () => 'isActive phải là true/false' }),
 });
 
 // Login không siết định dạng email ở đây -> sai email/sai password phải trả cùng 1 lỗi 401
@@ -74,6 +89,13 @@ const assignOwnerSchema = z.object({
   ownerId: z.number({ error: () => 'ownerId là bắt buộc' }).int().positive(),
 });
 
+const portServiceSchema = z.object({
+  serviceStatus: z.enum(['in_service', 'maintenance'], {
+    error: () => 'serviceStatus phải là in_service hoặc maintenance',
+  }),
+  reason: z.string().trim().max(500).optional(),
+});
+
 const isoDateTimeField = (label) =>
   z.string({ error: () => `${label} phải là chuỗi ISO 8601` }).transform((value, ctx) => {
     const date = new Date(value);
@@ -84,24 +106,44 @@ const isoDateTimeField = (label) =>
     return date;
   });
 
-// Cho phép sai số 1 phút (độ trễ mạng/clock skew) khi so với "hiện tại"
+// Luật thời gian còn lại (không ở quá khứ, tối đa 7 ngày, 15'-4h, giờ phục vụ) kiểm tra ở
+// services/bookings.js -> assertBookingWindow, để dùng chung 1 mốc "now" với phần còn lại của route.
 const createBookingSchema = z
   .object({
     portId: z.number({ error: () => 'portId là bắt buộc' }).int().positive(),
     startTime: isoDateTimeField('startTime'),
     endTime: isoDateTimeField('endTime'),
   })
-  .refine((data) => data.startTime.getTime() >= Date.now() - 60 * 1000, {
-    message: 'startTime phải lớn hơn hoặc bằng hiện tại',
-    path: ['startTime'],
-  })
   .refine((data) => data.endTime.getTime() > data.startTime.getTime(), {
     message: 'endTime phải lớn hơn startTime',
     path: ['endTime'],
   });
 
+const cancelBookingSchema = z.object({
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+
+const checkInSchema = z.object({
+  code: z.string({ error: () => 'code là bắt buộc' }).regex(/^\d{6}$/, 'code phải gồm 6 chữ số'),
+  portId: z.number().int().positive().optional(),
+  attachSessionId: z.number().int().positive().optional(),
+});
+
+const forceCloseSchema = z.object({
+  energyKwh: z.number({ error: () => 'energyKwh phải là số' }).min(0).max(100000),
+  note: z.string({ error: () => 'note là bắt buộc' }).trim().min(1, 'note là bắt buộc').max(500),
+});
+
 const createPaymentSchema = z.object({
   chargingSessionId: z.number({ error: () => 'chargingSessionId là bắt buộc' }).int().positive(),
+});
+
+const markRefundedSchema = z.object({
+  note: z.string().trim().min(1).max(500).optional(),
+});
+
+const resolveIncidentSchema = z.object({
+  note: z.string({ error: () => 'note là bắt buộc' }).trim().min(1, 'note là bắt buộc').max(1000),
 });
 
 module.exports = {
@@ -109,12 +151,20 @@ module.exports = {
   emailField,
   passwordField,
   registerSchema,
+  createUserSchema,
+  userStatusSchema,
   loginSchema,
   refreshSchema,
   updateUserSchema,
   createStationSchema,
   updateStationSchema,
   assignOwnerSchema,
+  portServiceSchema,
   createBookingSchema,
+  cancelBookingSchema,
+  checkInSchema,
+  forceCloseSchema,
   createPaymentSchema,
+  markRefundedSchema,
+  resolveIncidentSchema,
 };

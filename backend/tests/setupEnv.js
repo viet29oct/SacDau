@@ -11,6 +11,11 @@ process.env.VNPAY_HASH_SECRET = 'test_vnpay_hash_secret';
 process.env.VNPAY_URL = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
 process.env.VNPAY_RETURN_URL = 'http://localhost:3000/payments/vnpay-return';
 process.env.UNIT_PRICE_PER_KWH = '3500';
+process.env.BOOKING_DEPOSIT_VND = '20000';
+// Giờ phục vụ mở cả ngày trong test để kết quả không phụ thuộc giờ chạy test;
+// luật 6h-22h được test riêng (bookings.test.js, nạp lại module với env khác).
+process.env.SERVICE_OPEN_HOUR = '0';
+process.env.SERVICE_CLOSE_HOUR = '24';
 
 if (!/_test$/.test(new URL(process.env.DATABASE_URL).pathname)) {
   throw new Error('DATABASE_URL của test phải trỏ tới DB có tên kết thúc bằng _test');

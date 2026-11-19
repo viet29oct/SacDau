@@ -7,6 +7,7 @@ const toUser = (row) => ({
   name: row.name,
   email: row.email,
   role: row.role,
+  isActive: row.is_active,
 });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -86,20 +86,32 @@ describe('GET /stations (public)', () => {
   });
 });
 
-describe('PATCH /stations/:id và assign-owner (chống IDOR theo mô hình owner-được-phân-công)', () => {
-  it('owner chưa được phân công -> 403 khi sửa trạm', async () => {
+describe('PATCH /stations/:id và assign-owner (dữ liệu gốc chỉ admin sửa)', () => {
+  it('admin sửa được tên/toạ độ; owner kể cả được phân công -> 403', async () => {
     const admin = await createAdmin();
     const created = await createStation(admin.accessToken);
+    const stationId = created.body.data.id;
     const owner = await registerUser({ email: 'o@example.com', role: 'owner' });
+    await request(app)
+      .patch(`/stations/${stationId}/assign-owner`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ ownerId: owner.user.id });
 
-    const res = await request(app)
-      .patch(`/stations/${created.body.data.id}`)
+    const byOwner = await request(app)
+      .patch(`/stations/${stationId}`)
       .set('Authorization', `Bearer ${owner.accessToken}`)
-      .send({ name: 'Tên mới' });
-    expect(res.status).toBe(403);
+      .send({ lat: 10.1 });
+    expect(byOwner.status).toBe(403);
+
+    const byAdmin = await request(app)
+      .patch(`/stations/${stationId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ name: 'Trạm đã đổi tên' });
+    expect(byAdmin.status).toBe(200);
+    expect(byAdmin.body.data).toMatchObject({ name: 'Trạm đã đổi tên', location: { lat: 21.0368, lng: 105.7829 } });
   });
 
-  it('admin phân công owner -> owner đó sửa được, owner khác vẫn 403', async () => {
+  it('admin phân công owner -> /stations/managed của owner đó có trạm, owner khác không thấy', async () => {
     const admin = await createAdmin();
     const created = await createStation(admin.accessToken);
     const stationId = created.body.data.id;
@@ -113,18 +125,23 @@ describe('PATCH /stations/:id và assign-owner (chống IDOR theo mô hình owne
     expect(assign.status).toBe(200);
     expect(assign.body.data.ownerId).toBe(owner.user.id);
 
-    const okRes = await request(app)
-      .patch(`/stations/${stationId}`)
-      .set('Authorization', `Bearer ${owner.accessToken}`)
-      .send({ name: 'Trạm đã đổi tên' });
-    expect(okRes.status).toBe(200);
-    expect(okRes.body.data.name).toBe('Trạm đã đổi tên');
+    const mine = await request(app).get('/stations/managed').set('Authorization', `Bearer ${owner.accessToken}`);
+    expect(mine.body.data.map((s) => s.id)).toEqual([stationId]);
+    const others = await request(app)
+      .get('/stations/managed')
+      .set('Authorization', `Bearer ${otherOwner.accessToken}`);
+    expect(others.body.data).toEqual([]);
+  });
 
-    const forbidden = await request(app)
-      .patch(`/stations/${stationId}`)
-      .set('Authorization', `Bearer ${otherOwner.accessToken}`)
-      .send({ name: 'Hack' });
-    expect(forbidden.status).toBe(403);
+  it('không phân công được owner đang bị khoá', async () => {
+    const admin = await createAdmin();
+    const created = await createStation(admin.accessToken);
+    const owner = await registerUser({ email: 'o@example.com', role: 'owner', isActive: false });
+    const res = await request(app)
+      .patch(`/stations/${created.body.data.id}/assign-owner`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ ownerId: owner.user.id });
+    expect(res.status).toBe(400);
   });
 
   it('assign-owner với ownerId không phải role owner -> 400 VALIDATION_ERROR', async () => {
@@ -153,8 +170,8 @@ describe('PATCH /stations/:id và assign-owner (chống IDOR theo mô hình owne
   });
 });
 
-describe('DELETE /stations/:id (chỉ admin)', () => {
-  it('admin xoá được; driver -> 403', async () => {
+describe('DELETE /stations/:id (chỉ admin, ngừng hoạt động - soft)', () => {
+  it('admin ngừng hoạt động được; trạm biến khỏi danh sách public nhưng vẫn còn trong DB; driver -> 403', async () => {
     const admin = await createAdmin();
     const created = await createStation(admin.accessToken);
     const driver = await registerUser();
@@ -168,8 +185,65 @@ describe('DELETE /stations/:id (chỉ admin)', () => {
       .delete(`/stations/${created.body.data.id}`)
       .set('Authorization', `Bearer ${admin.accessToken}`);
     expect(res.status).toBe(200);
+    expect(res.body.data.isActive).toBe(false);
 
     const after = await request(app).get(`/stations/${created.body.data.id}`);
     expect(after.status).toBe(404);
+    const list = await request(app).get('/stations');
+    expect(list.body.data).toHaveLength(0);
+    const managed = await request(app).get('/stations/managed').set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(managed.body.data[0].isActive).toBe(false);
+  });
+
+  it('còn booking sắp tới -> 409 STATION_IN_USE (trước đây xoá cứng sẽ lỗi khoá ngoại 500)', async () => {
+    const admin = await createAdmin();
+    const created = await createStation(admin.accessToken);
+    const driver = await registerUser();
+    const portId = created.body.data.ports[0].id;
+    await pool.query(
+      `INSERT INTO bookings (user_id, port_id, start_time, end_time, status)
+       VALUES ($1, $2, now() + interval '1 day', now() + interval '1 day 1 hour', 'confirmed')`,
+      [driver.user.id, portId],
+    );
+    const res = await request(app)
+      .delete(`/stations/${created.body.data.id}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('STATION_IN_USE');
+  });
+});
+
+describe('PATCH /ports/:id/service (bảo trì cổng)', () => {
+  it('owner được phân công bật bảo trì -> trả booking bị ảnh hưởng; owner khác -> 403', async () => {
+    const admin = await createAdmin();
+    const created = await createStation(admin.accessToken);
+    const owner = await registerUser({ email: 'o@example.com', role: 'owner' });
+    const otherOwner = await registerUser({ email: 'o2@example.com', role: 'owner' });
+    const driver = await registerUser();
+    await request(app)
+      .patch(`/stations/${created.body.data.id}/assign-owner`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ ownerId: owner.user.id });
+    const portId = created.body.data.ports[0].id;
+    await pool.query(
+      `INSERT INTO bookings (user_id, port_id, start_time, end_time, status)
+       VALUES ($1, $2, now() + interval '1 day', now() + interval '1 day 1 hour', 'confirmed')`,
+      [driver.user.id, portId],
+    );
+
+    const forbidden = await request(app)
+      .patch(`/ports/${portId}/service`)
+      .set('Authorization', `Bearer ${otherOwner.accessToken}`)
+      .send({ serviceStatus: 'maintenance' });
+    expect(forbidden.status).toBe(403);
+
+    const res = await request(app)
+      .patch(`/ports/${portId}/service`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .send({ serviceStatus: 'maintenance', reason: 'Hỏng cáp' });
+    expect(res.status).toBe(200);
+    expect(res.body.data.port).toMatchObject({ id: portId, serviceStatus: 'maintenance', online: false });
+    expect(res.body.data.affectedBookings).toHaveLength(1);
+    expect(res.body.data.affectedBookings[0].checkInCode).toBeNull();
   });
 });
