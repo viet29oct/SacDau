@@ -45,3 +45,6 @@ gis/data/raw/
 
 # IoT: thu muc build PlatformIO (toolchain + cache, rat nang)
 iot/.pio/
+
+# IoT: mat khau WiFi/MQTT that cua mach (mau: iot/secrets.example.h)
+iot/secrets.h

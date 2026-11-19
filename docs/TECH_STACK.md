@@ -36,7 +36,7 @@ Chú thích mức độ: **[Bắt buộc]** cần có để đạt yêu cầu m�
 | Ngôn ngữ | C/C++ (Arduino framework) | Dùng Arduino IDE hoặc PlatformIO |
 | Thư viện | `WiFi`, `PubSubClient`, `ArduinoJson`, `DHT sensor library` | Kết nối WiFi, publish MQTT, đóng gói JSON |
 | Giao thức | MQTT | **Đã chốt 1 topic duy nhất**: `stations/{stationId}/status` — xem payload chính xác ở `docs/contracts.md` mục 1 |
-| Broker | Eclipse Mosquitto (chạy bằng Docker) | **Bắt buộc có xác thực** (user/password + ACL theo trạm, không cho kết nối ẩn danh — xem `mosquitto/README.md`). Khi demo Wokwi trên cloud dùng HiveMQ Cloud bản free (TLS + user/password), **không** dùng broker công cộng không mật khẩu (ai cũng giả được bản tin) |
+| Broker | Eclipse Mosquitto (chạy bằng Docker) | **Bắt buộc có xác thực** (user/password + ACL theo trạm, không cho kết nối ẩn danh — xem `mosquitto/README.md`). Demo Wokwi trong VS Code nối thẳng broker trên máy qua `host.wokwi.internal`; chạy trên wokwi.com thì cần broker cloud có TLS + user/password (vd EMQX Cloud Serverless). **Không** dùng broker công cộng không mật khẩu (ai cũng giả được bản tin) |
 | Công cụ kiểm tra | MQTT Explorer hoặc MQTTX | Xem message trực tiếp, hỗ trợ viết báo cáo |
 
 Payload chuẩn, field, kiểu dữ liệu: xem **`docs/contracts.md`** (đây là bản chốt cuối, không lặp lại ở đây để tránh 2 nơi ghi khác nhau).

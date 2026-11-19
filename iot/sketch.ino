@@ -10,20 +10,14 @@
 //   - Nút bấm  = cắm / rút súng sạc (nhấn giữ 2s = giả lập lỗi fault, nhấn ngắn lúc fault = reset)
 //   - Biến trở = công suất sạc; vặn về 0 = xe đã đầy pin nhưng chưa rút súng (vẫn "charging")
 
-// ===== Cấu hình — ĐIỀN TRƯỚC KHI CHẠY =====
-const char* WIFI_SSID = "Wokwi-GUEST";
-const char* WIFI_PASSWORD = "";
+// ===== Cấu hình =====
+// WiFi, broker, mật khẩu trạm nằm trong secrets.h (không commit).
+// Lần đầu: copy secrets.example.h thành secrets.h rồi điền. Xem mosquitto/README.md.
+// Broker bắt buộc đăng nhập; KHÔNG dùng broker công cộng không mật khẩu
+// (vd broker.hivemq.com): ai cũng gửi được bản tin giả.
+#include "secrets.h"
 
-// Broker bắt buộc đăng nhập, username = mã trạm (xem mosquitto/README.md).
-// Demo Wokwi trên cloud: HiveMQ Cloud của nhóm (TLS, cổng 8883).
-// KHÔNG dùng broker công cộng không mật khẩu (broker.hivemq.com): ai cũng gửi bản tin giả được.
-const char* MQTT_HOST = "your-cluster-id.s1.eu.hivemq.cloud";
-const int   MQTT_PORT = 8883;
-const char* MQTT_USER = "ST01";
-const char* MQTT_PASS = "doi_mat_khau_tram_ST01";
-#define MQTT_USE_TLS 1   // 0 khi nối Mosquitto local không TLS (cổng 1883)
-
-const char* STATION_ID = "ST01";   // phải trùng stations.code trên server và MQTT_USER
+const char* STATION_ID = MQTT_USER;   // mã trạm = username MQTT (ACL stations/%u/status)
 
 #define DHT_PIN   4
 #define DHT_TYPE  DHT22

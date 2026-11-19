@@ -174,13 +174,14 @@ Hoàn tiền:   (không) | due ─admin xác nhận─► refunded
 ## 13. Chạy demo
 
 - **IPN của VNPay**: VNPay không gọi được `localhost`. Khi demo cần mở tunnel (vd `cloudflared tunnel --url http://localhost:3000`), rồi khai URL `https://<tunnel>/payments/vnpay-ipn` ở mục cấu hình IPN trên cổng merchant sandbox. Không có tunnel thì tài xế trả cọc xong booking vẫn bị huỷ sau 5 phút (tiền sẽ vào diện cần hoàn khi IPN đến sau).
-- **MQTT có xác thực**: Mosquitto local bật user/password + ACL theo trạm (username = mã trạm, xem `mosquitto/README.md`). Wokwi chạy trên cloud không vào được broker trên máy; khi demo Wokwi dùng HiveMQ Cloud bản Serverless (free): TLS + mỗi credential 1 permission với 1 topic filter — trạm `ST01` chỉ *Publish* `stations/ST01/status`, backend chỉ *Subscribe* `stations/+/status`. Kiểm tra lại trên giao diện HiveMQ lúc tạo vì chính sách gói free có thể đổi.
+- **MQTT có xác thực**: Mosquitto local bật user/password + ACL theo trạm (username = mã trạm, xem `mosquitto/README.md`). Demo Wokwi: chạy **Wokwi trong VS Code** và cho mạch nối thẳng Mosquitto trên máy qua `host.wokwi.internal:1883` (gateway có sẵn trong extension) — giữ nguyên xác thực + ACL, không cần broker cloud (đã chạy thật 2026-11-19). Chỉ khi chạy trên wokwi.com mới cần broker cloud có TLS + đăng nhập (vd EMQX Cloud Serverless); HiveMQ Cloud Serverless free đã ngừng nhận đăng ký mới. Cấu hình mạch nằm ở `iot/secrets.h` (không commit, mẫu `iot/secrets.example.h`).
 
 ## 14. Checklist bàn giao
 
 **IoT (Người 1) — `iot/sketch.ino`** *(đã sửa 2026-11-19, cần Người 1 xem lại)*
-- [x] Đăng nhập broker bằng user/password của trạm, TLS `WiFiClientSecure` cổng 8883 (chưa kiểm tra chứng chỉ — `setInsecure()`, đủ cho demo).
-- [ ] **Điền `MQTT_HOST`/`MQTT_PASS` thật** ở đầu sketch sau khi tạo cluster HiveMQ Cloud.
+- [x] Đăng nhập broker bằng user/password của trạm; bật/tắt TLS bằng `MQTT_USE_TLS` (TLS: `WiFiClientSecure` cổng 8883, chưa kiểm tra chứng chỉ — `setInsecure()`, đủ cho demo).
+- [x] Cấu hình bí mật tách ra `iot/secrets.h` (gitignore), mẫu `iot/secrets.example.h`.
+- [x] Đã chạy thật mạch ↔ server (2026-11-19, Wokwi VS Code → `host.wokwi.internal` → Mosquitto): cắm khi chưa check-in → phiên trái phép; giữ nút 2s / quá nhiệt → `fault`, đóng phiên `device_fault`, mở incident; reset khi hết nóng → `idle`.
 - [x] Publish **ngay khi đổi trạng thái** + heartbeat 5 giây; mất kết nối thì giữ lại, gửi ngay khi kết nối lại.
 - [x] Chống dội nút bấm (30 ms) — tránh 1 lần bấm thành nhiều lần cắm/rút.
 - [x] Giữ `charging` khi pin đầy (công suất 0), chỉ gửi `idle` khi rút súng.
