@@ -1,0 +1,34 @@
+[
+  {
+    "mode": "redesign",
+    "depth": "full",
+    "scope": "site",
+    "shape": "Map / Diagram",
+    "theme": "wayfind",
+    "axes": "light/mono/cool",
+    "hero": "Counter",
+    "nav": "edge-aligned",
+    "footer": "index columns",
+    "imagery": "photographs, library 2 · product sample in hero",
+    "photos": [
+      "Close-up_of_an_electric_car_charging._Traffic_lights_in_a_blurry_background.jpg",
+      "Honda_electric_car_charging_on_private_parking_lot_in_Tokyo.jpg"
+    ],
+    "entry": "hero",
+    "fingerprint": "wayfind/map-diagram/counter/edge/index",
+    "sections": [
+      "Hero (station board over photo)",
+      "Route map",
+      "Fares table on ink band",
+      "Hours schedule strip + rules rows",
+      "Roles beside photo"
+    ],
+    "signature": "station board with the price per kWh on an ink plate",
+    "waived": [
+      "77",
+      "85"
+    ],
+    "prompt": "EV charging station network in Hanoi: find a station, see live port status, book, pay via VNPay",
+    "date": "2026-11-22"
+  }
+]

@@ -2,9 +2,9 @@ import Card from '../components/ui/Card';
 
 export default function StationsPage() {
   return (
-    <Card>
-      <h1 className="text-xl font-semibold text-slate-900">Bản đồ trạm sạc</h1>
-      <p className="mt-2 text-slate-600">Khung trang — bản đồ Leaflet sẽ được thêm vào đây.</p>
+    <Card className="app-head">
+      <h1 className="app-title">Bản đồ trạm sạc</h1>
+      <p className="app-lead">Khung trang: bản đồ Leaflet sẽ được thêm vào đây.</p>
     </Card>
   );
 }
