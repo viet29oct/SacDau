@@ -6,7 +6,11 @@ export default function ProtectedRoute({ allowedRoles }) {
   const location = useLocation();
 
   if (loading) {
-    return <div className="p-6 text-center text-slate-500">Đang tải...</div>;
+    return (
+      <p className="loading" role="status">
+        Đang tải…
+      </p>
+    );
   }
 
   if (!user) {

@@ -1,14 +1,11 @@
 const variants = {
-  primary: 'bg-forest text-white hover:bg-forest-light',
-  secondary: 'bg-slate-200 text-slate-800 hover:bg-slate-300',
+  primary: 'btn btn--primary',
+  secondary: 'btn',
 };
 
-export default function Button({ children, variant = 'primary', className = '', ...props }) {
+export default function Button({ children, variant = 'primary', className = '', type = 'button', ...props }) {
   return (
-    <button
-      className={`rounded-md px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
-      {...props}
-    >
+    <button type={type} className={`${variants[variant]} ${className}`.trim()} {...props}>
       {children}
     </button>
   );

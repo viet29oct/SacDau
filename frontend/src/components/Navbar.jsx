@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardPathForRole } from '../utils/roleDashboard';
 
@@ -7,42 +8,58 @@ const roleLabel = { driver: 'Tài xế', owner: 'Quản lý trạm', admin: 'Qu�
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleLogout() {
     logout();
     navigate('/login');
   }
 
+  const closeMenu = () => setMenuOpen(false);
+
   return (
-    <nav className="flex items-center justify-between bg-navy px-6 py-3 text-white shadow">
-      <Link to={dashboardPathForRole(user?.role)} className="text-lg font-semibold">
-        Sạc<span className="text-forest-light">Đâu</span>
-      </Link>
-      <div className="flex items-center gap-4 text-sm">
-        <Link to="/stations" className="hover:underline">
-          Bản đồ trạm
+    <header className="app-nav">
+      <a className="skip" href="#main">
+        Bỏ qua thanh điều hướng
+      </a>
+      <div className="container app-nav__bar">
+        <Link to={dashboardPathForRole(user?.role)} className="wordmark" aria-label="SạcĐâu, trang của tôi">
+          SạcĐâu
         </Link>
-        <Link to="/bookings" className="hover:underline">
-          Đặt chỗ
-        </Link>
-        {(user?.role === 'owner' || user?.role === 'admin') && (
-          <Link to="/reports" className="hover:underline">
-            Báo cáo
-          </Link>
-        )}
-        <div className="flex items-center gap-3">
-          <span className="rounded bg-navy-dark px-2 py-1 text-xs">
-            {roleLabel[user?.role] ?? user?.role}
-          </span>
-          <span>{user?.name}</span>
-          <button
-            onClick={handleLogout}
-            className="rounded bg-white px-3 py-1 text-navy hover:bg-slate-100"
-          >
-            Đăng xuất
-          </button>
+
+        <button
+          type="button"
+          className="btn btn--sm app-nav__toggle"
+          aria-expanded={menuOpen}
+          aria-controls="app-menu"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? 'Đóng menu' : 'Menu'}
+        </button>
+
+        <div id="app-menu" className="app-nav__menu" data-open={menuOpen}>
+          <nav className="app-nav__links" aria-label="Chính">
+            <NavLink to="/stations" className="app-nav__link" onClick={closeMenu}>
+              Bản đồ trạm
+            </NavLink>
+            <NavLink to="/bookings" className="app-nav__link" onClick={closeMenu}>
+              Đặt chỗ
+            </NavLink>
+            {(user?.role === 'owner' || user?.role === 'admin') && (
+              <NavLink to="/reports" className="app-nav__link" onClick={closeMenu}>
+                Báo cáo
+              </NavLink>
+            )}
+          </nav>
+          <div className="app-nav__user">
+            <span className="pill">{roleLabel[user?.role] ?? user?.role}</span>
+            <span>{user?.name}</span>
+            <button type="button" onClick={handleLogout} className="btn btn--sm">
+              Đăng xuất
+            </button>
+          </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 }

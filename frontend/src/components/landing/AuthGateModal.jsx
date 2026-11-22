@@ -1,33 +1,46 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AuthGateModal({ open, onClose }) {
   const navigate = useNavigate();
+  const primaryRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const previous = document.activeElement;
+    primaryRef.current?.focus();
+    function handleKey(e) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-navy-dark/70 px-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="dialog" onClick={onClose}>
       <div
-        className="w-full max-w-sm rounded-2xl border border-white/10 bg-navy p-6 text-center text-white shadow-2xl"
+        className="dialog__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-gate-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold">Cần đăng nhập</h2>
-        <p className="mt-2 text-sm text-white/70">
-          Bạn cần đăng nhập để vào khu vực này của hệ thống.
-        </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <button
-            onClick={onClose}
-            className="rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"
-          >
+        <h2 id="auth-gate-title">Cần đăng nhập</h2>
+        <p>Bạn cần đăng nhập để vào khu vực này của hệ thống.</p>
+        <div className="dialog__actions">
+          <button type="button" onClick={onClose} className="btn">
             Đóng
           </button>
           <button
+            type="button"
+            ref={primaryRef}
             onClick={() => navigate('/login')}
-            className="rounded-md bg-forest px-4 py-2 text-sm font-medium hover:bg-forest-light"
+            className="btn btn--primary"
           >
             Đăng nhập
           </button>

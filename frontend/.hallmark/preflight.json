@@ -1,0 +1,13 @@
+{
+  "scanned": "2026-11-22",
+  "findings": {
+    "fonts": "none declared: browser default sans (index.html has no font link; src/index.css has no font-family)",
+    "palette": "Tailwind @theme tokens navy #113259, navy-dark #0c2544, forest #2a623d, forest-light #357a4c (src/index.css L3-8) plus Tailwind slate/white/red defaults",
+    "motion": "no library; hand-rolled Reveal (IntersectionObserver), Counter, useParallax, useMouseGradient, landing-float keyframes",
+    "spacing": "Tailwind default 4pt scale",
+    "framework": "Vite 8 + React 19.3 + react-router-dom 7.18 + Tailwind 4.3 (@tailwindcss/vite), JSX",
+    "product": "dev server on :5173; backend :3000 down and Docker stopped, so screens behind sign-in cannot render (redirect to /login)"
+  },
+  "preserve": ["brand: SacDau wordmark, navy + forest palette", "user illustrations: bg1.jpg, taixe.png, chutram.png", "every route, link, field and handler"],
+  "introduce": ["theme system and tokens", "type", "composition of the landing", "gates and focus states"]
+}

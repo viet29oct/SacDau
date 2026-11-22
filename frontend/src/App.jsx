@@ -11,6 +11,7 @@ import BookingsPage from './pages/BookingsPage';
 import ReportsPage from './pages/ReportsPage';
 import InfoPlaceholderPage from './pages/InfoPlaceholderPage';
 import NotFoundPage from './pages/NotFoundPage';
+import PaymentResultPage from './pages/PaymentResultPage';
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
       <Route path="/gioi-thieu" element={<InfoPlaceholderPage title="Giới thiệu" />} />
       <Route path="/tin-tuc" element={<InfoPlaceholderPage title="Tin tức" />} />
       <Route path="/ho-tro" element={<InfoPlaceholderPage title="Hỗ trợ" />} />
+      <Route path="/payment-result" element={<PaymentResultPage />} />
 
       <Route element={<Layout />}>
         <Route element={<ProtectedRoute allowedRoles={['driver']} />}>
