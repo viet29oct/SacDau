@@ -29,7 +29,13 @@ async function rawRequest(path, options) {
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
-  const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...options, headers });
+  } catch {
+    // fetch chỉ ném lỗi khi không tới được server (server tắt, mất mạng, bị chặn CORS)
+    throw new ApiError('NETWORK_ERROR', 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại sau ít phút.');
+  }
   const body = await res.json().catch(() => null);
 
   if (!body) {
