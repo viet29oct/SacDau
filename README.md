@@ -15,6 +15,7 @@ ESP32 (Wokwi) gửi trạng thái cổng sạc qua MQTT → backend Node.js tự
 | [`docs/LUONG_NGHIEP_VU.md`](docs/LUONG_NGHIEP_VU.md) | Trước khi động vào đặt chỗ / phiên sạc / thanh toán — luồng và các kịch bản xấu |
 | [`docs/contracts.md`](docs/contracts.md) | Khi viết API, frontend hoặc firmware — field, endpoint, error code, MQTT, WebSocket |
 | [`mosquitto/README.md`](mosquitto/README.md) | Tạo tài khoản MQTT, chạy mạch Wokwi nối vào broker |
+| [`docs/PGADMIN.md`](docs/PGADMIN.md) | Xem/sửa DB bằng pgAdmin: thông tin kết nối (cổng 5433) và các lỗi đăng nhập hay gặp |
 
 ## Cấu trúc thư mục
 
