@@ -8,22 +8,22 @@ Cập nhật: 2026-11-23.
 
 | Mảng | Phụ trách | Trạng thái |
 |---|---|---|
-| Hạ tầng (Docker, Postgres/PostGIS, Mosquitto có xác thực) | Người 2 | ✅ Xong |
-| Backend API + luồng nghiệp vụ | Người 2 | ✅ Xong, `npm test` 134/134. Code Phase 5b đang ở nhánh `Viet`, **chưa vào `main`** |
-| IoT (firmware ESP32/Wokwi) | Người 1 | ✅ Chạy thật với server qua Wokwi VS Code — cần Người 1 xem lại |
+| Hạ tầng (Docker, Postgres/PostGIS, Mosquitto có xác thực) | Người 1 (Việt) | ✅ Xong |
+| Backend API + luồng nghiệp vụ | Người 1 (Việt) | ✅ Xong, `npm test` 134/134. Phase 5b đã vào `main` (PR #9, 2026-11-19) |
+| IoT (firmware ESP32/Wokwi) | Người 2 (Phi) | ✅ Chạy thật với server qua Wokwi VS Code — cần Người 2 xem lại |
 | Frontend | chưa chốt | 🟡 Có khung, landing, đăng nhập/đăng ký; các trang chức năng còn là placeholder |
-| GIS | Người 3 + nhóm 6 HTTTKG | 🟡 Chọn chủ đề 35, có khung plugin chạy được trên dữ liệu của môn; chưa có bản đồ web |
-| Kiểm thử bảo mật (Web an toàn) | Người 2 | ⬜ Chưa bắt đầu (chỉ có `npm audit`) |
+| GIS | Người 3 (Huấn) + nhóm 6 HTTTKG, phân công ở [`gis/PHAN_CONG.md`](../gis/PHAN_CONG.md) | 🟡 Chọn chủ đề 35, có khung plugin chạy được trên dữ liệu của môn; chưa có bản đồ web |
+| Kiểm thử bảo mật (Web an toàn) | Người 1 (Việt) | ⬜ Chưa bắt đầu (chỉ có `npm audit`) |
 
 ## Cần cả nhóm chốt
 
 - [ ] **Ai làm frontend** cho 3 vai trò bên dưới — đặc biệt màn hình **quản lý trạm**: thiếu nó thì luồng check-in không demo được trên giao diện.
-- [ ] Người 1 xem lại `iot/sketch.ino` (đã được sửa để khớp luồng mới, xem mục IoT).
-- [ ] Sau khi Phase 5b vào `main`: nhánh `Phi`, `Huan` rebase lên `main` và đọc `LUONG_NGHIEP_VU.md` + `contracts.md` (nhiều hành vi đã đổi).
+- [ ] Người 2 xem lại `iot/sketch.ino` (đã được sửa để khớp luồng mới, xem mục IoT).
+- [ ] Phi, Huấn lấy code mới về nhánh `Phi`, `Huan` (đang chậm `main` 43 commit, gồm cả Phase 5b): `git merge origin/main` theo `AGENTS.md` mục 2, rồi đọc lại `LUONG_NGHIEP_VU.md` + `contracts.md` (nhiều hành vi đã đổi).
 
 ---
 
-## Backend — Người 2
+## Backend — Người 1 (Việt)
 
 Đã xong (chi tiết hành vi ở `LUONG_NGHIEP_VU.md`, endpoint ở `contracts.md`):
 
@@ -46,7 +46,7 @@ Còn lại:
 - [ ] (Nên có) Swagger/OpenAPI (`swagger-ui-express`) cho báo cáo
 - [ ] Demo VNPay thật qua tunnel (cách làm ở `README.md`)
 
-## IoT — Người 1
+## IoT — Người 2 (Phi)
 
 `iot/sketch.ino`, mạch `iot/diagram.json`. Đã chạy thật mạch ↔ server: cắm khi chưa check-in → phiên trái phép; giữ nút 2 giây / quá nhiệt → `fault`, đóng phiên, mở sự cố; hết nóng → `idle`.
 
@@ -56,7 +56,7 @@ Còn lại:
 - [x] Chống dội nút (30 ms); giữ `charging` khi pin đầy, chỉ gửi `idle` khi rút súng
 - [x] `timestamp: null` khi chưa đồng bộ NTP; `energyKwh` chỉ tăng trong 1 phiên
 - [x] Tự kết nối lại WiFi/MQTT không chặn vòng lặp
-- [ ] Người 1 xem lại và xác nhận
+- [ ] Người 2 xem lại và xác nhận
 - [ ] (Tuỳ chọn) Biến trở thứ 2 để giả lập riêng từng cổng đầy pin
 - [ ] (Tuỳ chọn) Chạy trên wokwi.com với broker cloud có TLS (EMQX Cloud Serverless) — chưa thử, xem `mosquitto/README.md`
 
@@ -69,9 +69,9 @@ Còn lại:
 - [ ] **Admin:** tạo/khoá tài khoản nhân viên, quản lý trạm + phân công, danh sách cần hoàn, báo cáo (Chart.js). Hiện admin đăng nhập xong được đưa tạm về `/reports`
 - [ ] ESLint + Prettier (dùng chung config cho `frontend/` và `backend/`)
 
-## GIS — Người 3 + nhóm 6 môn HTTTKG
+## GIS — Người 3 (Huấn) + nhóm 6 môn HTTTKG
 
-Môn HTTTKG (D18CNPM1) chấm **một plugin QGIS** theo một trong 40 chủ đề của giáo viên, chạy trên **bộ dữ liệu Bắc Ninh của môn**. Plugin, hướng dẫn và báo cáo chiếm 40% điểm thi, slide và trình bày chiếm 60%. Nhóm 6 có 6 người, gồm 3 người SacDau và 3 bạn chỉ làm trong `gis/`. Nhóm chọn **chủ đề 35**: Processing Plugin xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện. Trạm sạc SacDau là phần mở rộng. Dữ liệu, cách cài và chạy plugin: [`gis/README.md`](../gis/README.md).
+Môn HTTTKG (D18CNPM1) chấm **một plugin QGIS** theo một trong 40 chủ đề của giáo viên, chạy trên **bộ dữ liệu Bắc Ninh của môn**. Plugin, hướng dẫn và báo cáo chiếm 40% điểm thi, slide và trình bày chiếm 60%. Nhóm 6 có 6 người, gồm 3 người SacDau và 3 bạn chỉ làm trong `gis/`. Nhóm chọn **chủ đề 35**: Processing Plugin xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện. Trạm sạc SacDau là phần mở rộng. Ai làm việc nào: [`gis/PHAN_CONG.md`](../gis/PHAN_CONG.md), tên ghi cuối mỗi việc bên dưới. Dữ liệu, cách cài và chạy plugin: [`gis/README.md`](../gis/README.md).
 
 Hiện trạng:
 - Khung plugin `gis/sacdau_service_area/` chạy được, đã thử trên dữ liệu của môn: 12 đơn vị điện lực, bán kính 3 km, phục vụ 221/665 làng; 46 trạm sạc phục vụ 420/665 làng.
@@ -80,31 +80,31 @@ Hiện trạng:
 
 **G0 — Chủ đề và dữ liệu**
 - [x] Chọn chủ đề 35 (dự phòng: 21, tách điểm theo khoảng cách tới QL1/QL18)
-- [ ] Ghi `35` vào ô chủ đề của nhóm 6 trên bảng đăng ký của lớp (ô K3). Chủ đề không được trùng giữa các nhóm, ai ghi trước được trước
-- [ ] Hỏi giáo viên: dùng SacDau làm phần mở rộng/ứng dụng có được không
+- [x] Ghi `35` vào ô chủ đề của nhóm 6 trên bảng đăng ký của lớp (ô K3) — Việt
+- [ ] Hỏi giáo viên: dùng SacDau làm phần mở rộng/ứng dụng có được không — Huấn
 - [x] Vùng nghiên cứu: Bắc Ninh cũ (`KhuVucNghienCuu.shp` của môn). Bỏ việc tự tải ranh giới/đường từ OSM
 - [x] Trạm sạc: 46 điểm `amenity=charging_station` từ OSM trong vùng nghiên cứu, mã `BN001`…`BN046` (truy vấn 2026-11-23)
-- [ ] Nạp 46 trạm vào DB SacDau qua `POST /stations` (admin), lấy `code` từ file, số cổng gán mặc định vì OSM không có
+- [ ] Nạp 46 trạm vào DB SacDau qua `POST /stations` (admin), lấy `code` từ file, số cổng gán mặc định vì OSM không có — Việt
 
 **G1 — Plugin chủ đề 35** (`gis/sacdau_service_area/`)
 - [x] Khung plugin: provider Processing `SacDau`, nút trên toolbar/menu, thuật toán `sacdau:service_area`
 - [x] Tham số theo đề: lớp đơn vị và chọn 1/nhiều đơn vị (*Selected features only* hoặc biểu thức lọc), lớp khách hàng, bán kính, nơi lưu kết quả
 - [x] Kết quả: vùng phục vụ kèm số khách hàng, khách hàng được/chưa được phục vụ, vùng trống (km²) trong khu vực nghiên cứu
-- [ ] Style `.qml` cho 4 lớp kết quả, tự áp khi nạp vào project (dựa theo style trong `SanPhamMau/Style` của môn)
-- [ ] Bảng tổng hợp theo đơn vị (đơn vị, số KH, tỉ lệ) xuất CSV để đưa vào báo cáo
-- [ ] (Nên có) Gán dân số xã (`DanSoPXa2025`) cho từng làng để dùng làm trọng số, ra "số dân được phục vụ" thay vì chỉ số làng
-- [ ] Nén `.zip` và cài thử trên một máy chưa có repo (QGIS 3.44 LTR)
+- [ ] Style `.qml` cho 4 lớp kết quả, tự áp khi nạp vào project (dựa theo style trong `SanPhamMau/Style` của môn) — Dương
+- [ ] Bảng tổng hợp theo đơn vị (đơn vị, số KH, tỉ lệ) xuất CSV để đưa vào báo cáo — Phi
+- [ ] (Nên có) Gán dân số xã (`DanSoPXa2025`) cho từng làng để dùng làm trọng số, ra "số dân được phục vụ" thay vì chỉ số làng — Phong
+- [ ] Nén `.zip` và cài thử trên một máy chưa có repo (QGIS 3.44 LTR) — Tiệp
 
 **G2 — Mở rộng với SacDau**
-- [ ] Chạy plugin với lớp trạm sạc đọc thẳng từ PostGIS của SacDau (*Layer → Add PostGIS*), ngoài file GeoJSON
-- [ ] Xuất vùng trống ra `gis/data/` (GeoJSON, EPSG:4326) cho bản đồ web
-- [ ] Bản đồ web trong `frontend/src/pages/StationsPage.jsx`: cài `leaflet` + `react-leaflet` (version cứng), marker trạm từ `GET /stations` tô màu theo trạng thái cổng (WebSocket `port:update`), lọc theo khoảng cách (`?near=`), overlay vùng trống, ghi nguồn © OpenStreetMap
+- [ ] Chạy plugin với lớp trạm sạc đọc thẳng từ PostGIS của SacDau (*Layer → Add PostGIS*), ngoài file GeoJSON — Việt
+- [ ] Xuất vùng trống ra `gis/data/` (GeoJSON, EPSG:4326) cho bản đồ web — Huấn
+- [ ] Bản đồ web trong `frontend/src/pages/StationsPage.jsx`: cài `leaflet` + `react-leaflet` (version cứng), marker trạm từ `GET /stations` tô màu theo trạng thái cổng (WebSocket `port:update`), lọc theo khoảng cách (`?near=`), overlay vùng trống, ghi nguồn © OpenStreetMap — Huấn
 
 **G3 — Nộp bài và thi**
-- [ ] Một file gồm hướng dẫn cài đặt/sử dụng và báo cáo: phân tích yêu cầu, giao diện, dữ liệu, giải thuật, hệ toạ độ (dữ liệu môn ở EPSG:32648, trạm sạc ở 4326, đo trên hệ phẳng), phân công 6 người
-- [ ] Slide và kịch bản demo khoảng 10 phút. (1) Chạy đúng đề trên đơn vị điện lực. (2) Mở rộng với trạm sạc: vùng phủ, vùng trống, làng chưa có trạm. (3) Nếu G2 xong: tạo trạm mới trên SacDau ngay trong vùng trống, chạy lại plugin. Phần SacDau chỉ chiếm 1–2 slide, không trình bày đặt chỗ/VNPay/IoT
+- [ ] Một file gồm hướng dẫn cài đặt/sử dụng và báo cáo: phân tích yêu cầu, giao diện, dữ liệu, giải thuật, hệ toạ độ (dữ liệu môn ở EPSG:32648, trạm sạc ở 4326, đo trên hệ phẳng), phân công 6 người — mỗi người viết phần của mình, Tiệp gộp file
+- [ ] Slide và kịch bản demo khoảng 10 phút. (1) Chạy đúng đề trên đơn vị điện lực. (2) Mở rộng với trạm sạc: vùng phủ, vùng trống, làng chưa có trạm. (3) Nếu G2 xong: tạo trạm mới trên SacDau ngay trong vùng trống, chạy lại plugin. Phần SacDau chỉ chiếm 1–2 slide, không trình bày đặt chỗ/VNPay/IoT — Dương gộp slide, Phi viết kịch bản demo
 
-## Kiểm thử bảo mật — Người 2 (môn Web an toàn)
+## Kiểm thử bảo mật — Người 1 (Việt, môn Web an toàn)
 
 - [ ] OWASP ZAP quét toàn bộ API → `security/zap-report/`
 - [ ] Case study SQL Injection: 1 endpoint thử nghiệm cố ý lỗi, chứng minh bằng `sqlmap`, vá bằng tham số hoá

@@ -34,8 +34,10 @@ Thumbs.db
 mosquitto/passwd
 mosquitto/*.local
 
-# Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit
-.claude/
+# Claude Code skills cai local (vd UI/UX Pro Max) - moi nguoi tu cai, khong commit.
+# Rieng settings.json thi chia se: tat attribution AI, hook nhac sync main (AGENTS.md)
+.claude/*
+!.claude/settings.json
 
 # Ghi chu phien lam viec ca nhan - khong chia se len repo chung
 docs/NEXT_SESSION.md

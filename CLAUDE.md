@@ -2,6 +2,10 @@
 
 Tài liệu dự án: xem bảng "Tài liệu" trong `README.md`. Đặc tả nghiệp vụ chốt: `.claude/c_t_c_p_nh_t_ki_n_tr_c_nghi_p_v_d_n_d_nh_cho_claude.md`.
 
+Luật chung cho mọi AI agent (đọc tài liệu trước khi làm, lấy code mới từ `main`, không ghi công AI trong commit/PR) nằm ở `AGENTS.md`, nạp ở dòng dưới. Mở đầu câu trả lời đầu tiên của phiên bằng dòng `Đã đọc: …` (AGENTS.md mục 1), sau đó tới dòng `Skill: …`.
+
+@AGENTS.md
+
 ---
 
 ## Quy tắc dùng skill (bắt buộc, mỗi lần thực thi)

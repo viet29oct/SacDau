@@ -1,0 +1,32 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/.githooks/behind-main.sh\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"UserPromptSubmit\",\"additionalContext\":\"[Skill check] Truoc tool dau tien: doc TOAN BO danh sach skill dang co trong phien (skill tai tu claude.ai anthropic-skills:*, skill plugin, ~/.claude/skills, .claude/skills, skill co san) va so mo ta tung skill voi yeu cau. Bang Chon skill trong CLAUDE.md chi la goi y uu tien. Khop thi goi Skill truoc khi doc/sua code. Mo dau tra loi bang dong Skill: <ten> (hoac Skill: khong co skill phu hop).\"}}'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

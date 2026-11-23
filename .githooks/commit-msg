@@ -1,0 +1,4 @@
+#!/bin/sh
+# Chan commit co Co-Authored-By AI, "Generated with ...". Bat bang:
+#   git config core.hooksPath .githooks
+exec sh "$(dirname "$0")/check-ai-attribution.sh" "$1"

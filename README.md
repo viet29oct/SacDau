@@ -10,6 +10,7 @@ ESP32 (Wokwi) gửi trạng thái cổng sạc qua MQTT → backend Node.js tự
 |---|---|
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | **Đọc đầu tiên** — tiến độ từng mảng, việc còn lại, việc cần cả nhóm chốt |
 | [`docs/QUY_TAC_LAM_VIEC_NHOM.md`](docs/QUY_TAC_LAM_VIEC_NHOM.md) | Trước khi code: ai sở hữu file nào, nhánh/PR, `.env`, đổi contract |
+| [`AGENTS.md`](AGENTS.md) | Trước khi dùng AI agent (Codex, Claude Code, Gemini): tài liệu agent phải đọc, lấy code từ `main`, commit/PR không ghi công AI |
 | [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Công nghệ + version đã chốt của từng tầng |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Phạm vi tính năng theo vai trò, theo môn, và những gì đã cắt |
 | [`docs/LUONG_NGHIEP_VU.md`](docs/LUONG_NGHIEP_VU.md) | Trước khi động vào đặt chỗ / phiên sạc / thanh toán — luồng và các kịch bản xấu |
@@ -36,6 +37,9 @@ SacDau/
 Cần: Node `24.19.0` (`.nvmrc`), Docker Desktop, Git.
 
 ```bash
+# 0. Git hook của nhóm: chặn commit ghi công AI, nhắc khi nhánh chậm so với main (AGENTS.md)
+git config core.hooksPath .githooks
+
 # 1. Biến môi trường
 cp .env.example .env                       # Postgres cho docker compose
 cp backend/.env.example backend/.env       # điền JWT_SECRET, VNPAY_*, MQTT_PASSWORD

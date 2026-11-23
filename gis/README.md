@@ -1,9 +1,10 @@
 # GIS — plugin chủ đề 35 (môn Hệ thống thông tin không gian)
 
-Bài tập nhóm môn HTTTKG lớp D18CNPM1, nhóm 6: **chủ đề 35**, xây dựng Processing Plugin xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện. Phần mở rộng dùng trạm sạc của SacDau làm đơn vị phục vụ. Việc còn lại và kịch bản demo: [`docs/ROADMAP.md`](../docs/ROADMAP.md) mục GIS.
+Bài tập nhóm môn HTTTKG lớp D18CNPM1, nhóm 6: **chủ đề 35**, xây dựng Processing Plugin xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện. Phần mở rộng dùng trạm sạc của SacDau làm đơn vị phục vụ. Việc còn lại và kịch bản demo: [`docs/ROADMAP.md`](../docs/ROADMAP.md) mục GIS. Ai làm gì trong 6 người: [`PHAN_CONG.md`](PHAN_CONG.md).
 
 ```
 gis/
+├── PHAN_CONG.md              # phân công nhóm 6
 ├── sacdau_service_area/      # plugin QGIS — thư mục này là bài nộp
 │   ├── metadata.txt
 │   ├── plugin.py             # nút trên toolbar + menu SacDau

@@ -1,0 +1,8 @@
+# Ai duyệt PR theo thư mục. Có tác dụng khi branch protection của main bật
+# "Require review from Code Owners". Dòng khớp sau cùng thắng.
+
+# Mặc định: 1 trong 3 người SacDau (Việt, Phi, Huấn)
+*       @viet29oct @BoBeefsteakk @minhhuan15082k5-sudo
+
+# GIS: Huấn duyệt, Việt dự phòng
+/gis/   @minhhuan15082k5-sudo @viet29oct

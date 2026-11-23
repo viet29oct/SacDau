@@ -1,0 +1,31 @@
+# Chan PR co dong ghi cong AI trong tieu de, mo ta hoac commit (AGENTS.md muc 3).
+# Hook commit-msg chi chay tren may da bat core.hooksPath, va khong thay mo ta PR.
+name: no-ai-attribution
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tieu de va mo ta PR
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          printf '%s\n%s\n' "$PR_TITLE" "$PR_BODY" > "$RUNNER_TEMP/pr.txt"
+          sh .githooks/check-ai-attribution.sh "$RUNNER_TEMP/pr.txt"
+
+      - name: Commit trong PR
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git log --format=%B "$BASE..$HEAD" > "$RUNNER_TEMP/commits.txt"
+          sh .githooks/check-ai-attribution.sh "$RUNNER_TEMP/commits.txt"
