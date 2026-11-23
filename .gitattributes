@@ -1,3 +1,6 @@
 # File cấu hình Mosquitto được gắn vào container Linux -> luôn giữ xuống dòng LF
 # (core.autocrlf trên Windows sẽ đổi sang CRLF, làm broker đọc sai username/topic trong acl).
 mosquitto/* text eol=lf
+
+# Script hook chay bang sh (ke ca Git Bash tren Windows) -> CRLF lam hong dong #!/bin/sh
+.githooks/* text eol=lf

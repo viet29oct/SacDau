@@ -1,6 +1,6 @@
 # Quy tắc làm việc nhóm — SacDau
 
-Luật chơi chung của nhóm 3 người. Mục tiêu: không ai lệch version, không ai sửa nhầm file của người khác, `git merge` không nổ conflict vì lý do ngớ ngẩn. Version công nghệ: `TECH_STACK.md` mục 1.
+Luật chơi chung của nhóm 3 người làm SacDau, cộng 3 bạn chỉ làm phần GIS (mục 1). Mục tiêu: không ai lệch version, không ai sửa nhầm file của người khác, `git merge` không nổ conflict vì lý do ngớ ngẩn. Version công nghệ: `TECH_STACK.md` mục 1.
 
 ---
 
@@ -10,29 +10,42 @@ Chia theo **thư mục sở hữu** để mỗi người chủ yếu commit tron
 
 | Người | Mảng | Sở hữu chính | Môn |
 |---|---|---|---|
-| **Người 1** | IoT & thiết bị | `iot/` (sketch, mạch Wokwi, PlatformIO) | IoT |
-| **Người 2** | Backend core & bảo mật | `backend/` (route, service, middleware, migration, test), `mosquitto/`, `security/`, khung `frontend/` (router, `App.jsx`, `Layout`, `api/`, `context/`) | Ngôn ngữ kịch bản, Web an toàn |
-| **Người 3** | Không gian | `gis/`, trang bản đồ/biểu đồ trong `frontend/src/pages/` | GIS |
+| **Người 1 — Việt** (trưởng nhóm) | Backend core & bảo mật | `backend/` (route, service, middleware, migration, test), `mosquitto/`, `security/`, khung `frontend/` (router, `App.jsx`, `Layout`, `api/`, `context/`) | Ngôn ngữ kịch bản, Web an toàn |
+| **Người 2 — Phi** | IoT & thiết bị | `iot/` (sketch, mạch Wokwi, PlatformIO) | IoT |
+| **Người 3 — Huấn** | Không gian | `gis/`, trang bản đồ/biểu đồ trong `frontend/src/pages/` | GIS |
 
-> Toàn bộ backend hiện tại (kể cả `routes/stations.js` và xử lý MQTT `services/mqtt.js` + `sessionEngine.js`, ban đầu chia cho Người 3 và Người 1) đã được Người 2 viết trong Phase 5/5b. Người 1/3 muốn sửa các file này thì báo Người 2 trước. Phần màn hình frontend còn lại (tài xế, quản lý trạm, admin) **chưa chốt người làm** — xem `ROADMAP.md` mục "Cần cả nhóm chốt".
+**Nhóm GIS (môn HTTTKG, nhóm 6)** có 6 người: 3 người trên và 3 bạn Dương, Phong, Tiệp. Ba bạn này chỉ làm trong `gis/`, không đụng thư mục khác. Huấn điều phối phần GIS. Ai làm gì: [`gis/PHAN_CONG.md`](../gis/PHAN_CONG.md).
+
+> Toàn bộ backend hiện tại (kể cả `routes/stations.js` và xử lý MQTT `services/mqtt.js` + `sessionEngine.js`, ban đầu chia cho Người 3 và Người 2) đã được Người 1 viết trong Phase 5/5b. Người 2/3 muốn sửa các file này thì báo Người 1 trước. Phần màn hình frontend còn lại (tài xế, quản lý trạm, admin) **chưa chốt người làm** — xem `ROADMAP.md` mục "Cần cả nhóm chốt".
 
 - Ai cần sửa file **ngoài phạm vi của mình** → báo nhóm trước, không tự sửa rồi push.
 - Mỗi route là 1 file riêng trong `backend/src/routes/`, logic dùng chung để ở `services/` — không dồn vào 1 file.
 - Frontend: thêm trang/component mới thay vì sửa file khung của người khác.
 
-## 2. "Vùng cấm" — chỉ Người 2 sửa
+## 2. "Vùng cấm" — chỉ Người 1 sửa
 
 `docker-compose.yml`, `backend/src/db/`, `backend/src/app.js`, `backend/src/server.js`, `backend/migrations/`, `.env.example`, `backend/.env.example`, `mosquitto/mosquitto.conf`, `mosquitto/acl`.
 
-Người khác chỉ `require` để dùng (`const { query } = require('../db')`). Cần thêm bảng/cột, đổi cổng, thêm biến môi trường → nhắn Người 2, không tự viết `CREATE TABLE` rải rác. Lý do: các file này bị nhiều người sửa cùng lúc là nguồn conflict khó gỡ nhất và gây lỗi runtime cho người khác.
+Người khác chỉ `require` để dùng (`const { query } = require('../db')`). Cần thêm bảng/cột, đổi cổng, thêm biến môi trường → nhắn Người 1, không tự viết `CREATE TABLE` rải rác. Lý do: các file này bị nhiều người sửa cùng lúc là nguồn conflict khó gỡ nhất và gây lỗi runtime cho người khác.
 
 ## 3. Nhánh, commit, Pull Request
 
-- Mỗi người làm trên **nhánh riêng** (`Viet`, `Phi`, `Huan`, hoặc nhánh `feature/...` tách từ đó). **Không code trực tiếp trên `main`.**
+- Mỗi người làm trên **nhánh riêng** (`Viet`, `Phi`, `Huan`, hoặc nhánh `feature/...` tách từ đó). Ba bạn chỉ làm GIS dùng nhánh `gis/<ten>` (`gis/duong`, `gis/phong`, `gis/tiep`) tách từ `main`. **Không code trực tiếp trên `main`.**
 - Vào `main` qua Pull Request, có ít nhất 1 người khác xem trước khi merge.
-- `git pull` (hoặc rebase lên `main`) đầu mỗi buổi — pull trễ là nguyên nhân conflict lớn nhất.
+- Lấy code mới từ `main` đầu mỗi buổi và trước khi mở PR — pull trễ là nguyên nhân conflict lớn nhất. Dùng `git merge origin/main`, không rebase nhánh đã push. Cách làm chi tiết: `AGENTS.md` mục 2.
+- Dùng AI agent (Codex, Claude Code, Gemini…): theo `AGENTS.md`. Commit/PR không có dòng ghi công AI (`Co-Authored-By: Claude…`, `Generated with…`); hook `commit-msg` và CI sẽ chặn. Bật hook 1 lần sau khi clone: `git config core.hooksPath .githooks`.
 - Commit nhỏ, thường xuyên; message theo mẫu `feat: ...`, `fix: ...`, `docs: ...`, `chore: ...`.
-- Trước khi mở PR: chạy lại `npm test` (backend) / `npm run build` (frontend).
+- **Lên nhánh mình trước, hết lỗi mới mở PR.** Mọi thay đổi commit và push lên nhánh của mình (`Viet`, `Phi`, `Huan`, `gis/<ten>`), không push thẳng `main`. Chỉ mở PR vào `main` khi nhánh qua hết kiểm tra của phần đã sửa:
+
+  | Sửa trong | Phải qua |
+  |---|---|
+  | `backend/` | `npm test` trong `backend/` (DB test `sacdau_test`, xem `README.md`) |
+  | `frontend/` | `npm run build` trong `frontend/` |
+  | `iot/` | `pio run` build được; chạy mạch Wokwi nối broker không lỗi |
+  | `gis/` | plugin nạp được trong QGIS, chạy ra đúng kết quả mẫu ở `gis/README.md` |
+  | chỉ tài liệu | không cần |
+
+  Ghi lệnh đã chạy và kết quả vào mục "Test" của mô tả PR. Mỗi lần push lên nhánh nào, CI (`.github/workflows/ci.yml`) cũng tự chạy `npm test` của backend (trên Postgres/PostGIS sạch) và `npm run build` của frontend, kết quả ✅/❌ hiện ở tab Actions và ngay trong PR. PR còn ❌ thì chưa merge. Còn lỗi chưa sửa được mà cần người khác xem thì mở PR dạng **Draft**, ghi rõ lỗi, không bấm "Ready for review" cho tới khi hết lỗi.
 - Bị conflict: **không** `git push --force`, không bấm "accept all" khi chưa hiểu đoạn conflict — gọi người liên quan cùng xem.
 
 ## 4. Contract là luật

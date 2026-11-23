@@ -1,0 +1,4 @@
+#!/bin/sh
+# Nhac (khong chan) khi push ma nhanh dang cham so voi origin/main.
+sh "$(dirname "$0")/behind-main.sh" >&2
+exit 0
