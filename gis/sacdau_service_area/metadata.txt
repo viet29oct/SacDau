@@ -1,0 +1,13 @@
+[general]
+name=SacDau - Vùng phục vụ
+qgisMinimumVersion=3.28
+description=Xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ (chủ đề 35, môn HTTTKG)
+about=Processing plugin: buffer quanh các đơn vị phục vụ (đơn vị điện lực, trạm sạc...), đếm khách hàng nằm trong vùng phục vụ, tách khách hàng chưa được phục vụ và tính vùng trống trong khu vực nghiên cứu. Dữ liệu mẫu: bộ dữ liệu Bắc Ninh của môn và trạm sạc OSM của dự án SacDau.
+version=0.1.0
+author=Nhóm 6 - D18CNPM1
+hasProcessingProvider=yes
+category=Analysis
+tags=processing,buffer,service area,charging station
+icon=icon.svg
+experimental=True
+deprecated=False

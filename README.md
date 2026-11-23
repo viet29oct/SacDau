@@ -15,6 +15,8 @@ ESP32 (Wokwi) gửi trạng thái cổng sạc qua MQTT → backend Node.js tự
 | [`docs/LUONG_NGHIEP_VU.md`](docs/LUONG_NGHIEP_VU.md) | Trước khi động vào đặt chỗ / phiên sạc / thanh toán — luồng và các kịch bản xấu |
 | [`docs/contracts.md`](docs/contracts.md) | Khi viết API, frontend hoặc firmware — field, endpoint, error code, MQTT, WebSocket |
 | [`mosquitto/README.md`](mosquitto/README.md) | Tạo tài khoản MQTT, chạy mạch Wokwi nối vào broker |
+| [`docs/PGADMIN.md`](docs/PGADMIN.md) | Xem/sửa DB bằng pgAdmin: thông tin kết nối (cổng 5433) và các lỗi đăng nhập hay gặp |
+| [`gis/README.md`](gis/README.md) | Môn GIS: plugin QGIS chủ đề 35, bộ dữ liệu Bắc Ninh, trạm sạc OSM, cách cài và chạy |
 
 ## Cấu trúc thư mục
 
@@ -23,7 +25,7 @@ SacDau/
 ├── iot/            # ESP32 (Wokwi): sketch.ino, diagram.json, secrets.example.h
 ├── backend/        # Node.js + Express (JavaScript CommonJS), migration, test
 ├── frontend/       # React + Vite + Tailwind
-├── gis/            # QGIS, PyQGIS scripts, dữ liệu không gian
+├── gis/            # Plugin QGIS (môn HTTTKG), dữ liệu trạm sạc OSM
 ├── mosquitto/      # Cấu hình broker MQTT (xác thực + ACL theo trạm)
 ├── security/       # Báo cáo kiểm thử bảo mật
 └── docs/           # Tài liệu dự án
