@@ -103,11 +103,11 @@ Bảng đã migrate: `users`, `stations` (cột `geom`), `ports`, `bookings`, `c
 | Thành phần | Công nghệ |
 |---|---|
 | Phần mềm | QGIS 3.44 LTR, kết nối trực tiếp PostGIS |
-| Lập trình | PyQGIS (`gis/scripts/`) |
-| Dữ liệu nền | OpenStreetMap qua QuickOSM hoặc Geofabrik (file `.pbf` để ở `gis/data/raw/`, không commit) |
+| Lập trình | PyQGIS: Processing Plugin `gis/sacdau_service_area/` (chủ đề 35 môn HTTTKG) |
+| Dữ liệu nền | Bộ dữ liệu Bắc Ninh của môn (EPSG:32648, để ở `gis/data/raw/BacNinh/`, không commit). Trạm sạc lấy từ OpenStreetMap: `gis/data/stations_osm.geojson` |
 | Định dạng trao đổi | GeoJSON, Shapefile |
 | Hệ toạ độ | Lưu WGS84 (EPSG:4326); đo khoảng cách/buffer bằng UTM 48N (EPSG:32648) — phải nêu trong báo cáo |
-| Phép phân tích | Buffer + vùng trống phủ sóng, nearest neighbor, đếm điểm trong vùng phục vụ |
+| Phép phân tích | Buffer vùng phục vụ, đếm khách hàng trong vùng, vùng trống trong khu vực nghiên cứu (`gis/README.md`) |
 
 API dùng `geography` của PostGIS để tính khoảng cách ra mét (`ST_DWithin`, toán tử `<->`), không tự reproject trong query.
 
@@ -120,5 +120,5 @@ Git + GitHub, Docker Compose, Postman/Thunder Client, VS Code, draw.io (sơ đ�
 ## 4. Lưu ý về dữ liệu
 
 - Dữ liệu phiên sạc/đặt chỗ là **dữ liệu sinh giả có kiểm soát** — báo cáo phải ghi rõ nguồn và cách sinh.
-- Bản đồ nền (đường, ranh giới) lấy từ OpenStreetMap — dữ liệu thật, công khai.
-- Trạm sạc: tạo 5–15 điểm (hoặc lấy `amenity=charging_station` từ OSM) trong một khu vực nhỏ.
+- Dữ liệu nền (lưới điện, ranh giới, dân cư, đường) là bộ dữ liệu Bắc Ninh do giáo viên môn HTTTKG cung cấp.
+- Trạm sạc: 46 điểm `amenity=charging_station` thật từ OpenStreetMap trong Bắc Ninh cũ (© OpenStreetMap contributors, ODbL). Số cổng là giá trị gán thêm vì OSM không có. Chi tiết ở `gis/README.md`.
