@@ -97,6 +97,19 @@ describe('GET /reports/revenue', () => {
       .set('Authorization', `Bearer ${admin.accessToken}`);
     expect(res.status).toBe(400);
   });
+
+  it('from/to dạng YYYY-MM-DD lấy trọn ngày theo giờ VN', async () => {
+    await seed();
+    const admin = await createAdmin();
+    // Ngày (giờ VN) của các phiên trong seed, bắt đầu cách đây 3 giờ
+    const day = new Date(Date.now() - 3 * 3600 * 1000 + 7 * 3600 * 1000).toISOString().slice(0, 10);
+    const res = await request(app)
+      .get('/reports/revenue')
+      .query({ from: day, to: day })
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.totalSessions).toBe(2);
+  });
 });
 
 describe('GET /reports/usage', () => {

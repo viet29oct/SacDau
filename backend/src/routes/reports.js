@@ -3,6 +3,7 @@ const { query } = require('../db');
 const { authMiddleware, rbacMiddleware } = require('../middleware/auth');
 const { AppError, asyncHandler, ok } = require('../utils/http');
 const { UNPAID_SESSION_CONDITION } = require('../services/chargingSessions');
+const { vnDayRange } = require('../services/bookings');
 
 const router = Router();
 
@@ -10,13 +11,25 @@ const router = Router();
 // Mọi câu truy vấn dùng chung 3 tham số: $1 from, $2 to (lọc theo thời điểm bắt đầu phiên/booking),
 // $3 ownerId (null = admin, không giới hạn trạm).
 
-// from/to tùy chọn, dạng ISO 8601
+// YYYY-MM-DD là cả ngày theo giờ VN: from lấy đầu ngày, to lấy hết ngày.
+// Không xử lý riêng thì new Date('2026-11-30') là 00:00 UTC, lọc to=hôm nay ra gần như trống.
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+const parseBound = (value, edge) => {
+  if (!value) return null;
+  if (typeof value === 'string' && DATE_ONLY.test(value)) {
+    const day = vnDayRange(value);
+    return edge === 'from' ? day.from : new Date(day.to.getTime() - 1);
+  }
+  return new Date(value);
+};
+
+// from/to tùy chọn, dạng ISO 8601 hoặc YYYY-MM-DD
 const parseDateRange = (req) => {
   const { from, to } = req.query;
-  const fromDate = from ? new Date(from) : null;
-  const toDate = to ? new Date(to) : null;
+  const fromDate = parseBound(from, 'from');
+  const toDate = parseBound(to, 'to');
   if ((from && Number.isNaN(fromDate.getTime())) || (to && Number.isNaN(toDate.getTime()))) {
-    throw new AppError(400, 'VALIDATION_ERROR', 'from/to phải là ngày ISO 8601 hợp lệ');
+    throw new AppError(400, 'VALIDATION_ERROR', 'from/to phải là ngày ISO 8601 hoặc YYYY-MM-DD hợp lệ');
   }
   return { fromDate, toDate };
 };

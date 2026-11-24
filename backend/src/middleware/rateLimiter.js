@@ -12,6 +12,18 @@ const loginRateLimiter = rateLimit({
   },
 });
 
+// Chống tạo tài khoản rác hàng loạt (mỗi lần đăng ký tốn một lần bcrypt): mặc định 10 lần / giờ / IP.
+// Đọc env mỗi request để test (đăng ký hàng chục tài xế từ cùng IP) nâng được giới hạn.
+const registerRateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: () => Number(process.env.REGISTER_RATE_LIMIT) || 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    fail(res, 429, 'TOO_MANY_REQUESTS', 'Đăng ký quá nhiều tài khoản, vui lòng thử lại sau');
+  },
+});
+
 // Check-in: ngoài khoá 10' sau 5 lần sai mã của từng booking (đếm trong DB), giới hạn thêm theo
 // tài khoản để không dò mã hàng loạt trên nhiều booking. Đặt sau authMiddleware (cần req.user).
 const checkinRateLimiter = rateLimit({
@@ -25,4 +37,4 @@ const checkinRateLimiter = rateLimit({
   },
 });
 
-module.exports = { loginRateLimiter, checkinRateLimiter };
+module.exports = { loginRateLimiter, registerRateLimiter, checkinRateLimiter };

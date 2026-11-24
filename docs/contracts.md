@@ -132,7 +132,8 @@ Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `statio
 | `PAYMENT_IN_PROGRESS` | 409 | Tạo thanh toán khi đã có giao dịch `pending` chưa hết hạn |
 | `PAYMENT_ALREADY_PROCESSED` | 409 | Phiên đã thanh toán đủ; hoặc thao tác hoàn tiền lên giao dịch không ở trạng thái cần hoàn |
 | `INVALID_SIGNATURE` | 400 | Chữ ký VNPay không khớp |
-| `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (`/auth/login`, check-in) hoặc mã check-in đang bị khoá do sai nhiều lần |
+| `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (`/auth/login`, `/auth/register`, check-in) hoặc mã check-in đang bị khoá do sai nhiều lần |
+| `DB_UNAVAILABLE` | 500 | Riêng cho `/health`: không kết nối được DB (không trả chi tiết lỗi) |
 | `INTERNAL_ERROR` | 500 | Lỗi server không xác định |
 
 ---
@@ -336,6 +337,8 @@ Access token 15 phút, refresh token 7 ngày. Mỗi request có token, backend �
 |---|---|---|
 | GET | `/reports/revenue?from=&to=` | `{ totalRevenue, totalSessions, byStation: [{ stationId, revenue }], collectedRevenue, idleFees, forfeitedDeposits, refundsDue, outstandingRevenue, unauthorized: { sessions, energyKwh, amount } }` |
 | GET | `/reports/usage?from=&to=` | `{ byHour: [{ hour, count }], byStation: [{ stationId, count }] }` |
+
+`from`/`to` tuỳ chọn, nhận ISO 8601 hoặc `YYYY-MM-DD`. Dạng `YYYY-MM-DD` tính trọn ngày theo giờ Việt Nam: `from` từ 00:00, `to` tới hết 23:59:59 của ngày đó.
 
 `totalRevenue` = tổng `cost` của phiên có chủ đã đóng; `collectedRevenue` = tiền VNPay đã thu (không tính khoản cần hoàn); `forfeitedDeposits` = cọc mất do no-show/huỷ sát giờ; `refundsDue` = tổng đang cần hoàn; `outstandingRevenue` = tổng `amountDue` chưa trả; `unauthorized` = thất thoát do phiên trái phép.
 

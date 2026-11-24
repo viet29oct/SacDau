@@ -5,7 +5,7 @@ const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../se
 const { emailTakenError, findUserByEmail, findUserById, isUniqueViolation, toUser } = require('../services/users');
 const { logAudit } = require('../services/audit');
 const { AppError, asyncHandler, ok } = require('../utils/http');
-const { loginRateLimiter } = require('../middleware/rateLimiter');
+const { loginRateLimiter, registerRateLimiter } = require('../middleware/rateLimiter');
 const { loginSchema, refreshSchema, registerSchema } = require('../validation/schemas');
 const { validateBody } = require('../validation/validate');
 
@@ -24,6 +24,7 @@ const issueTokens = (user) => ({
 
 router.post(
   '/auth/register',
+  registerRateLimiter,
   validateBody(registerSchema),
   asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
