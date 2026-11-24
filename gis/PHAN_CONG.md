@@ -1,6 +1,6 @@
 # Phân công nhóm 6 — môn HTTTKG, chủ đề 35
 
-Plugin QGIS xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện, phần mở rộng dùng trạm sạc SacDau. Đề, dữ liệu, cách cài plugin: [`README.md`](README.md). Tiến độ tick ở [`docs/ROADMAP.md`](../docs/ROADMAP.md) mục GIS (mỗi việc có ghi tên người làm), file này chỉ ghi ai làm gì.
+Plugin QGIS xác định vùng phục vụ và số khách hàng dễ tiếp cận dịch vụ ngành điện, phần mở rộng dùng trạm sạc SacDau. Đề, dữ liệu, cách cài plugin: [`README.md`](README.md). Mỗi việc là một GitHub Issue nhãn `mon:gis`, tiến độ theo dõi ở đó; [`docs/ROADMAP.md`](../docs/ROADMAP.md) mục GIS chỉ còn tổng quan, Việt/Phi cập nhật. File này chỉ ghi ai làm gì. Ai duyệt, ai quyết: [`docs/QUY_TAC_LAM_VIEC_NHOM.md`](../docs/QUY_TAC_LAM_VIEC_NHOM.md) mục 9.
 
 Điểm: plugin + hướng dẫn + báo cáo 40%, slide + trình bày 60%. Mỗi người tự trình bày phần mình làm, nên ai cũng phải có một phần chạy được để demo.
 
@@ -9,7 +9,7 @@ Plugin QGIS xác định vùng phục vụ và số khách hàng dễ tiếp c�
 | | Họ tên | Trong SacDau | Phụ trách chính (GIS) |
 |---|---|---|---|
 | 1 | Hoàng Tùng Dương | — | Style bản đồ, gộp slide |
-| 2 | Đỗ Minh Huấn | Người 3 | **Điều phối GIS**, duyệt PR `gis/`, bản đồ web |
+| 2 | Đỗ Minh Huấn | Người 3 | Bản đồ web, nhắc tiến độ GIS |
 | 3 | Nguyễn Bảo Phi | Người 2 | Bảng tổng hợp CSV, kịch bản demo |
 | 4 | Nguyễn Văn Phong | — | Dân số làm trọng số |
 | 5 | Nguyễn Huy Tiệp | — | Đóng gói plugin, hướng dẫn cài đặt, gộp báo cáo |
@@ -17,8 +17,8 @@ Plugin QGIS xác định vùng phục vụ và số khách hàng dễ tiếp c�
 
 ## Việc gấp
 
-- **Huấn:** hỏi giáo viên dùng SacDau làm phần mở rộng có được không. Không được thì bỏ phần G2, Việt và Huấn chuyển sang hỗ trợ G1/G3.
-- **Dương, Phong, Tiệp:** gửi username GitHub cho Việt để được thêm vào repo, làm xong mục "Bắt đầu" bên dưới.
+- **Huấn:** hỏi giáo viên dùng SacDau làm phần mở rộng có được không. Báo lại Việt/Phi; không được thì Việt/Phi quyết bỏ phần G2, Việt và Huấn chuyển sang hỗ trợ G1/G3.
+- **Dương, Phong, Tiệp:** gửi username GitHub và `git config user.name` cho Việt hoặc Phi để ghi vào `.github/members.txt`, làm xong mục "Bắt đầu" bên dưới.
 
 ## Việc từng người
 
@@ -29,11 +29,11 @@ Plugin QGIS xác định vùng phục vụ và số khách hàng dễ tiếp c�
 - Gộp slide cả nhóm, giữ một mẫu thống nhất.
 - Báo cáo: phần trình bày bản đồ.
 
-### 2. Huấn — điều phối và bản đồ web
+### 2. Huấn — bản đồ web
 
-- Theo dõi tiến độ, nhắc việc, duyệt PR vào `gis/`.
+- Nhắc tiến độ GIS trên các issue `mon:gis`, comment góp ý PR (không duyệt/merge, mục 9 QUY_TAC).
 - Xuất vùng trống ra `gis/data/` (GeoJSON, EPSG:4326) cho bản đồ web.
-- Bản đồ web `frontend/src/pages/StationsPage.jsx`: Leaflet, marker trạm theo trạng thái cổng, lọc theo khoảng cách, overlay vùng trống. Thêm thư viện `leaflet` thì ghi version vào `docs/TECH_STACK.md` trước.
+- Bản đồ web `frontend/src/pages/StationsPage.jsx`: Leaflet, marker trạm theo trạng thái cổng, lọc theo khoảng cách, overlay vùng trống. Thêm thư viện `leaflet` cần Việt/Phi đồng ý, ghi version vào `docs/TECH_STACK.md` trước.
 - Báo cáo: phân tích yêu cầu, phần mở rộng SacDau, bảng phân công.
 
 ### 3. Phi — số liệu và kịch bản demo
@@ -82,7 +82,8 @@ Tiệp gộp báo cáo, Dương gộp slide. File báo cáo và slide để ngo�
 2. Clone repo, rồi bật hook của nhóm: `git config core.hooksPath .githooks`.
 3. Lấy bộ dữ liệu của môn từ Huấn, đặt vào `gis/data/raw/BacNinh/` (không commit, xem `README.md`).
 4. Cài plugin theo `README.md` mục "Cài plugin", chạy thử ra đúng kết quả mẫu.
-5. Làm trên nhánh `gis/<ten>` (`gis/duong`, `gis/phong`, `gis/tiep`) tách từ `main`, mở PR vào `main`, Huấn duyệt.
-6. Chỉ sửa trong `gis/`. Cần đổi thứ gì ở ngoài thì nhắn Huấn hoặc Việt.
+5. Làm trên nhánh của mình, đã tạo sẵn trên GitHub: `git checkout Duong` (hoặc `Phong`, `Tiep`). Mở PR vào `main`, Việt hoặc Phi duyệt. Hook `pre-push` chặn nếu bạn push nhầm lên `main` hay nhánh người khác.
+6. Chỉ sửa trong `gis/`. PR có file ngoài `gis/` sẽ bị CI `scope-guard` báo đỏ và không merge được. Cần đổi thứ gì ở ngoài thì nhắn Việt hoặc Phi.
+7. Không commit dữ liệu môn (`.shp`, `.dbf`…), project QGIS (`.qgz`) hay file > 1 MB: CI `files-guard` chặn.
 
 Dùng AI agent (Codex, Claude Code, Gemini…) thì theo [`AGENTS.md`](../AGENTS.md): agent phải đọc tài liệu trước, commit và PR không được có dòng ghi công AI. Quy tắc nhóm đầy đủ: [`docs/QUY_TAC_LAM_VIEC_NHOM.md`](../docs/QUY_TAC_LAM_VIEC_NHOM.md).

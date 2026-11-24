@@ -1,6 +1,6 @@
 # Roadmap & tiến độ — SacDau
 
-Danh sách việc chung của cả nhóm. Xong việc nào thì tick `[x]` ngay trong PR làm việc đó; xong 1 mốc lớn thì thêm 1 dòng vào "Mốc đã qua" ở cuối. Chi tiết kỹ thuật không ghi ở đây — trỏ sang `contracts.md` / `LUONG_NGHIEP_VU.md`.
+Tổng quan tiến độ của cả nhóm. **Chỉ Việt hoặc Phi cập nhật file này** (QUY_TAC mục 9); việc chi tiết giao và theo dõi bằng GitHub Issues (nhãn `mon:*`), người làm không tick ở đây. Xong 1 mốc lớn thì thêm 1 dòng vào "Mốc đã qua" ở cuối. Chi tiết kỹ thuật không ghi ở đây — trỏ sang `contracts.md` / `LUONG_NGHIEP_VU.md`.
 
 Cập nhật: 2026-11-23.
 
@@ -19,7 +19,7 @@ Cập nhật: 2026-11-23.
 
 - [ ] **Ai làm frontend** cho 3 vai trò bên dưới — đặc biệt màn hình **quản lý trạm**: thiếu nó thì luồng check-in không demo được trên giao diện.
 - [ ] Người 2 xem lại `iot/sketch.ino` (đã được sửa để khớp luồng mới, xem mục IoT).
-- [ ] Phi, Huấn lấy code mới về nhánh `Phi`, `Huan` (đang chậm `main` 43 commit, gồm cả Phase 5b): `git merge origin/main` theo `AGENTS.md` mục 2, rồi đọc lại `LUONG_NGHIEP_VU.md` + `contracts.md` (nhiều hành vi đã đổi).
+- [ ] Phi, Huấn lấy code mới về nhánh `Phi`, `Huan` (đang chậm `main` 46 commit, gồm cả Phase 5b): `git merge origin/main` theo `AGENTS.md` mục 2, rồi đọc lại `LUONG_NGHIEP_VU.md` + `contracts.md` (nhiều hành vi đã đổi).
 
 ---
 

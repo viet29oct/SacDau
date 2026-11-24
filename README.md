@@ -11,6 +11,7 @@ ESP32 (Wokwi) gửi trạng thái cổng sạc qua MQTT → backend Node.js tự
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | **Đọc đầu tiên** — tiến độ từng mảng, việc còn lại, việc cần cả nhóm chốt |
 | [`docs/QUY_TAC_LAM_VIEC_NHOM.md`](docs/QUY_TAC_LAM_VIEC_NHOM.md) | Trước khi code: ai sở hữu file nào, nhánh/PR, `.env`, đổi contract |
 | [`AGENTS.md`](AGENTS.md) | Trước khi dùng AI agent (Codex, Claude Code, Gemini): tài liệu agent phải đọc, lấy code từ `main`, commit/PR không ghi công AI |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Quyết định đã chốt (ngày, lý do, ảnh hưởng) — dùng cho phần "lý do lựa chọn" trong báo cáo |
 | [`docs/TECH_STACK.md`](docs/TECH_STACK.md) | Công nghệ + version đã chốt của từng tầng |
 | [`docs/FEATURES.md`](docs/FEATURES.md) | Phạm vi tính năng theo vai trò, theo môn, và những gì đã cắt |
 | [`docs/LUONG_NGHIEP_VU.md`](docs/LUONG_NGHIEP_VU.md) | Trước khi động vào đặt chỗ / phiên sạc / thanh toán — luồng và các kịch bản xấu |
