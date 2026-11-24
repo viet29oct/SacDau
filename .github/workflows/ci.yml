@@ -1,6 +1,6 @@
-# Chạy test backend và build frontend mỗi lần push, nhánh nào cũng chạy.
+# Chạy test backend, build frontend, kiểm cú pháp plugin GIS mỗi lần push, nhánh nào cũng chạy.
 # Kết quả gắn vào commit nên PR thấy luôn, không cần chạy lại theo pull_request.
-# iot/ (Wokwi) và gis/ (QGIS) không chạy được ở đây, vẫn kiểm tra tay (QUY_TAC mục 3).
+# iot/ (Wokwi) và chạy plugin trong QGIS không làm được ở đây, vẫn kiểm tra tay (QUY_TAC mục 3).
 name: ci
 
 on:
@@ -63,3 +63,17 @@ jobs:
       - run: npm run build
         env:
           VITE_API_URL: http://localhost:3000
+
+  # Không có QGIS nên chỉ bắt lỗi chắc chắn sai: cú pháp, tên chưa định nghĩa.
+  # Chạy plugin thật vẫn kiểm tay theo gis/README.md.
+  gis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install ruff==0.6.9
+      - run: python -m compileall -q gis
+      - run: ruff check gis --select E9,F63,F7,F82 --output-format=github

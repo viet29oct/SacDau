@@ -4,3 +4,6 @@ mosquitto/* text eol=lf
 
 # Script hook chay bang sh (ke ca Git Bash tren Windows) -> CRLF lam hong dong #!/bin/sh
 .githooks/* text eol=lf
+
+# Bang thanh vien doc bang awk trong hook va CI
+.github/members.txt text eol=lf

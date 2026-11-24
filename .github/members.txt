@@ -1,0 +1,21 @@
+# Bang thanh vien - nguon duy nhat cho hook pre-push, CI scope-guard, CI approval-guard.
+# Sua file nay = doi quyen. Chi Viet hoac Phi sua (QUY_TAC muc 9).
+#
+# Cot, cach nhau bang dau |:
+#   ten     : ten goi, khong dau
+#   nhanh   : nhanh duy nhat cua nguoi do
+#   github  : tai khoan GitHub; "-" neu chua biet
+#   git     : gia tri `git config user.name` tren may nguoi do; "-" neu chua biet
+#   vai_tro : maintainer = duyet + merge PR cua moi nguoi, tu merge PR cua minh
+#             core       = sua duoc ngoai gis/, PR can maintainer duyet
+#             gis        = chi sua trong gis/, PR can maintainer duyet
+#
+# Tai khoan khong co trong bang (hoac github = "-") bi coi la "gis": mac dinh cam.
+#
+# ten   | nhanh | github               | git       | vai_tro
+Viet    | Viet  | viet29oct            | viet29oct | maintainer
+Phi     | Phi   | BoBeefsteakk         | -         | maintainer
+Huan    | Huan  | minhhuan15082k5-sudo | -         | core
+Duong   | Duong | CeanD18              | -         | gis
+Phong   | Phong | YoungTysons          | -         | gis
+Tiep    | Tiep  | huytiep0412-dotcom   | -         | gis

@@ -1,0 +1,81 @@
+# Rao chan PR vao main (QUY_TAC muc 9):
+# - scope-guard: nguoi vai tro "gis" (hoac khong co trong .github/members.txt) chi duoc sua gis/
+# - files-guard: chan file > 1 MB, du lieu tho GIS, project QGIS, file bi mat
+# Bang thanh vien doc tu nhanh dich (main), nen PR tu them minh vao bang khong co tac dung.
+name: guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  scope-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Nguoi chi lam GIS chi sua trong gis/
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # main chua co bang (chi o PR dau tien them bang) thi dung bang trong PR
+          git show "origin/$BASE_REF:.github/members.txt" > "$RUNNER_TEMP/members.txt" 2>/dev/null \
+            || cp .github/members.txt "$RUNNER_TEMP/members.txt"
+          role=$(sh .githooks/member.sh 3 "$AUTHOR" 5 "$RUNNER_TEMP/members.txt")
+          echo "Tac gia PR: $AUTHOR, vai tro: ${role:-khong co trong bang -> coi la gis}"
+
+          case "$role" in
+            maintainer|core) echo "Duoc sua moi thu muc."; exit 0 ;;
+          esac
+
+          outside=$(git diff --name-only "$BASE...$HEAD" | grep -v '^gis/' || true)
+          if [ -n "$outside" ]; then
+            echo "::error::Tai khoan $AUTHOR chi duoc sua trong gis/. File ngoai gis/ trong PR:"
+            echo "$outside" | sed 's/^/  /'
+            echo "Bo cac file nay khoi PR (git checkout origin/main -- <file>), hoac nho Viet/Phi sua."
+            exit 1
+          fi
+          echo "Moi file deu trong gis/."
+
+  files-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Khong file lon, du lieu tho, file bi mat
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          limit=1048576
+          bad=0
+          # Chi xet file them/sua, khong xet file bi xoa
+          git diff --name-only --diff-filter=AMR "$BASE...$HEAD" > "$RUNNER_TEMP/files.txt"
+          while IFS= read -r f; do
+            size=$(git cat-file -s "$HEAD:$f")
+            if [ "$size" -gt "$limit" ]; then
+              echo "::error file=$f::$f nang $((size / 1024)) KB (> 1 MB). Du lieu lon de ngoai repo (gis/data/raw/, Google Drive)."
+              bad=1
+            fi
+            case "$f" in
+              *.shp|*.shx|*.dbf|*.prj|*.cpg|*.sbn|*.sbx|*.pbf|*.osm)
+                echo "::error file=$f::$f la du lieu tho GIS, khong commit (de trong gis/data/raw/)."; bad=1 ;;
+              *.qgz|*.qgs)
+                echo "::error file=$f::$f la project QGIS (chua duong dan tuyet doi tren may ban), khong commit."; bad=1 ;;
+              .env|*/.env|.env.*|*/.env.*)
+                case "$f" in *.example) ;; *) echo "::error file=$f::$f chua bien moi truong that, khong commit."; bad=1 ;; esac ;;
+              iot/secrets.h|mosquitto/passwd|mosquitto/*.local)
+                echo "::error file=$f::$f chua mat khau that, khong commit."; bad=1 ;;
+            esac
+          done < "$RUNNER_TEMP/files.txt"
+          exit $bad

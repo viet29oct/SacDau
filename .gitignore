@@ -45,8 +45,18 @@ docs/NEXT_SESSION.md
 # GIS: file OSM tho (Geofabrik .pbf, hang tram MB) - moi nguoi tu tai lai theo gis/README
 gis/data/raw/
 
+# GIS: project QGIS tren may ca nhan (chua duong dan tuyet doi), file backup, plugin da nen
+*.qgz
+*.qgs
+*.qgs~
+*.qgz~
+*.zip
+
 # IoT: thu muc build PlatformIO (toolchain + cache, rat nang)
 iot/.pio/
 
 # IoT: mat khau WiFi/MQTT that cua mach (mau: iot/secrets.example.h)
 iot/secrets.h
+
+# Ghi chu rieng cho Claude Code tren may tung nguoi
+CLAUDE.local.md
