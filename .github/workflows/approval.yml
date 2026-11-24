@@ -1,0 +1,65 @@
+# approval-guard (QUY_TAC muc 9): PR cua maintainer (Viet, Phi) tu merge duoc;
+# PR cua nguoi khac can mot maintainer approve dung commit moi nhat.
+#
+# Khong dung "Require approvals" cua GitHub vi repo ca nhan chi cho chu repo bypass,
+# Phi se khong tu merge duoc. Ruleset cua main bat buoc job nay xanh.
+# Push them commit sau khi da approve -> job chay lai va do, can approve lai.
+name: approval
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  approval-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Can maintainer duyet
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # main chua co bang (chi o PR dau tien them bang) thi dung bang trong PR
+          git show "origin/$BASE_REF:.github/members.txt" > "$RUNNER_TEMP/members.txt" 2>/dev/null \
+            || cp .github/members.txt "$RUNNER_TEMP/members.txt"
+          role() { sh .githooks/member.sh 3 "$1" 5 "$RUNNER_TEMP/members.txt"; }
+
+          if [ "$(role "$AUTHOR")" = maintainer ]; then
+            echo "$AUTHOR la maintainer, tu merge duoc."
+            exit 0
+          fi
+
+          # Danh gia moi nhat cua tung nguoi, chi tinh approve tren dung commit HEAD
+          gh api --paginate "repos/$REPO/pulls/$PR/reviews" \
+            --jq '.[] | select(.state != "COMMENTED") | "\(.user.login) \(.state) \(.commit_id)"' \
+            > "$RUNNER_TEMP/reviews.txt"
+
+          ok=""
+          for u in $(cut -d' ' -f1 "$RUNNER_TEMP/reviews.txt" | sort -u); do
+            [ "$(role "$u")" = maintainer ] || continue
+            last=$(grep "^$u " "$RUNNER_TEMP/reviews.txt" | tail -n 1)
+            state=$(echo "$last" | cut -d' ' -f2)
+            sha=$(echo "$last" | cut -d' ' -f3)
+            if [ "$state" = APPROVED ] && [ "$sha" = "$HEAD" ]; then ok="$u"; fi
+          done
+
+          if [ -n "$ok" ]; then
+            echo "Da duoc $ok duyet tren commit $HEAD."
+            exit 0
+          fi
+          echo "::error::PR cua $AUTHOR can Viet hoac Phi approve commit moi nhat ($HEAD) truoc khi merge."
+          exit 1

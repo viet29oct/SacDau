@@ -1,8 +1,21 @@
-# Ai duyệt PR theo thư mục. Có tác dụng khi branch protection của main bật
-# "Require review from Code Owners". Dòng khớp sau cùng thắng.
+# Ai được GitHub tự gán làm reviewer, theo thư mục. Dòng khớp sau cùng thắng.
+# Việc chặn merge do job approval-guard làm (.github/workflows/approval.yml),
+# không dựa vào file này. Quyền duyệt: Việt hoặc Phi (QUY_TAC mục 9).
 
-# Mặc định: 1 trong 3 người SacDau (Việt, Phi, Huấn)
-*       @viet29oct @BoBeefsteakk @minhhuan15082k5-sudo
+# Mặc định, kể cả gis/: Việt hoặc Phi
+*       @viet29oct @BoBeefsteakk
 
-# GIS: Huấn duyệt, Việt dự phòng
-/gis/   @minhhuan15082k5-sudo @viet29oct
+# Vùng cấm (QUY_TAC mục 2): Việt
+/docker-compose.yml     @viet29oct
+/.env.example           @viet29oct
+/backend/.env.example   @viet29oct
+/backend/src/db/        @viet29oct
+/backend/src/app.js     @viet29oct
+/backend/src/server.js  @viet29oct
+/backend/migrations/    @viet29oct
+/mosquitto/mosquitto.conf @viet29oct
+/mosquitto/acl          @viet29oct
+
+# Luật nhóm, CI, hook, bảng thành viên: Việt hoặc Phi
+/.github/   @viet29oct @BoBeefsteakk
+/.githooks/ @viet29oct @BoBeefsteakk

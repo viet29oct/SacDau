@@ -1,4 +1,42 @@
 #!/bin/sh
-# Nhac (khong chan) khi push ma nhanh dang cham so voi origin/main.
-sh "$(dirname "$0")/behind-main.sh" >&2
+# 1. Chan push nham: len main, hoac len nhanh cua nguoi khac (theo .github/members.txt).
+#    Day la chan tai nan tren may; tren GitHub con ruleset va CI chan lan nua.
+# 2. Nhac (khong chan) khi nhanh dang cham so voi origin/main.
+
+hooks="$(dirname "$0")"
+me_git=$(git config user.name)
+me=$(sh "$hooks/member.sh" 4 "$me_git" 1)
+my_branch=$(sh "$hooks/member.sh" 4 "$me_git" 2)
+
+blocked=0
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  case "$remote_ref" in
+    refs/heads/*) target=${remote_ref#refs/heads/} ;;
+    *) continue ;;
+  esac
+
+  if [ "$target" = "main" ]; then
+    echo "[pre-push] Khong push thang len main. Push len nhanh cua ban roi mo PR (QUY_TAC muc 3)." >&2
+    blocked=1
+    continue
+  fi
+
+  owner=$(sh "$hooks/member.sh" 2 "$target" 1)
+  [ -n "$owner" ] || continue            # nhanh khong co trong bang (feature/...): cho qua
+
+  if [ -z "$me" ]; then
+    echo "[pre-push] user.name \"$me_git\" chua co trong .github/members.txt, khong kiem duoc nhanh. Nho Viet/Phi them vao." >&2
+    continue
+  fi
+
+  if [ "$owner" != "$me" ]; then
+    echo "[pre-push] Ban ($me) dang push len nhanh $target cua $owner. Nhanh cua ban la $my_branch:" >&2
+    echo "           git checkout $my_branch" >&2
+    blocked=1
+  fi
+done
+
+[ "$blocked" = 0 ] || exit 1
+
+sh "$hooks/behind-main.sh" >&2
 exit 0
