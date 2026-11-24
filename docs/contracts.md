@@ -132,7 +132,7 @@ Khớp với schema DB thật ở `backend/migrations/` (bảng `users`, `statio
 | `PAYMENT_IN_PROGRESS` | 409 | Tạo thanh toán khi đã có giao dịch `pending` chưa hết hạn |
 | `PAYMENT_ALREADY_PROCESSED` | 409 | Phiên đã thanh toán đủ; hoặc thao tác hoàn tiền lên giao dịch không ở trạng thái cần hoàn |
 | `INVALID_SIGNATURE` | 400 | Chữ ký VNPay không khớp |
-| `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (`/auth/login`, check-in) hoặc mã check-in đang bị khoá do sai nhiều lần |
+| `TOO_MANY_REQUESTS` | 429 | Vượt giới hạn tần suất (`/auth/login`, `/auth/register`, check-in) hoặc mã check-in đang bị khoá do sai nhiều lần |
 | `DB_UNAVAILABLE` | 500 | Riêng cho `/health`: không kết nối được DB (không trả chi tiết lỗi) |
 | `INTERNAL_ERROR` | 500 | Lỗi server không xác định |
 

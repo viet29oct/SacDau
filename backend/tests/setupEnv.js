@@ -4,6 +4,8 @@ process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ?? 'postgres://sacdau_user:sacdau_dev_pw@localhost:5433/sacdau_test';
 process.env.JWT_SECRET = 'test_access_secret';
 process.env.JWT_REFRESH_SECRET = 'test_refresh_secret';
+// Test đăng ký hàng chục tài xế từ cùng IP; giới hạn thật (10/giờ) test riêng ở auth.test.js
+process.env.REGISTER_RATE_LIMIT = '1000';
 
 // VNPay: không gọi mạng thật trong test, chỉ cần đủ biến để buildPaymentUrl/verifySignature không throw
 process.env.VNPAY_TMN_CODE = 'TESTTMN';

@@ -1,4 +1,5 @@
 const request = require('supertest');
+const express = require('express');
 const jwt = require('jsonwebtoken');
 const app = require('../src/app');
 const pool = require('../src/db');
@@ -65,6 +66,26 @@ describe('POST /auth/register', () => {
     const res = await request(app).post('/auth/register').set('Content-Type', 'application/json').send('{"name":');
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('quá giới hạn đăng ký theo IP -> 429 TOO_MANY_REQUESTS', async () => {
+    // Limiter riêng (bộ đếm mới), không dùng chung bộ đếm với các test đăng ký khác trong file
+    const original = process.env.REGISTER_RATE_LIMIT;
+    process.env.REGISTER_RATE_LIMIT = '2';
+    try {
+      let registerRateLimiter;
+      jest.isolateModules(() => {
+        ({ registerRateLimiter } = require('../src/middleware/rateLimiter'));
+      });
+      const mini = express().post('/auth/register', registerRateLimiter, (_req, res) => res.status(201).end());
+      expect((await request(mini).post('/auth/register')).status).toBe(201);
+      expect((await request(mini).post('/auth/register')).status).toBe(201);
+      const blocked = await request(mini).post('/auth/register');
+      expect(blocked.status).toBe(429);
+      expect(blocked.body.error.code).toBe('TOO_MANY_REQUESTS');
+    } finally {
+      process.env.REGISTER_RATE_LIMIT = original;
+    }
   });
 });
 
