@@ -338,6 +338,8 @@ Access token 15 phút, refresh token 7 ngày. Mỗi request có token, backend �
 | GET | `/reports/revenue?from=&to=` | `{ totalRevenue, totalSessions, byStation: [{ stationId, revenue }], collectedRevenue, idleFees, forfeitedDeposits, refundsDue, outstandingRevenue, unauthorized: { sessions, energyKwh, amount } }` |
 | GET | `/reports/usage?from=&to=` | `{ byHour: [{ hour, count }], byStation: [{ stationId, count }] }` |
 
+`from`/`to` tuỳ chọn, nhận ISO 8601 hoặc `YYYY-MM-DD`. Dạng `YYYY-MM-DD` tính trọn ngày theo giờ Việt Nam: `from` từ 00:00, `to` tới hết 23:59:59 của ngày đó.
+
 `totalRevenue` = tổng `cost` của phiên có chủ đã đóng; `collectedRevenue` = tiền VNPay đã thu (không tính khoản cần hoàn); `forfeitedDeposits` = cọc mất do no-show/huỷ sát giờ; `refundsDue` = tổng đang cần hoàn; `outstandingRevenue` = tổng `amountDue` chưa trả; `unauthorized` = thất thoát do phiên trái phép.
 
 ---
